@@ -50,15 +50,15 @@
     };
 
     const material = new THREE.MeshPhysicalMaterial({
-      color: options.color,
-      transmission: options.transmission,
+      color: 0x79e0e8,
+      transmission: 1,
       transparent: true,
 
-      thickness: options.thickness,
-      roughness: options.roughness,
-      envMapIntensity: options.envMapIntensity,
-      clearcoat: options.clearcoat,
-      clearcoatRoughness: options.clearcoatRoughness,
+      thickness: 0.5,
+      roughness: 0.32,
+      envMapIntensity: 0,
+      clearcoat: 1,
+      clearcoatRoughness: 1,
     });
 
     function addPieceToWorld(index, gltf) {
