@@ -4,6 +4,7 @@
   import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
   import { GUI } from "dat.gui";
   import Buttons from "./Buttons.svelte";
+  import MaterialChanger from "./MaterialChanger.svelte";
   let camera, scene, renderer, controls;
   let meshes = [];
   let meshnames = [];
@@ -385,30 +386,6 @@
 
     requestAnimationFrame(animate);
   }
-  function changeMaterial() {
-    console.log(whitematerial);
-    currentMaterial = whitematerial;
-    // meshes.sort(compareMeshes);
-    meshes[0].material = whitematerial;
-    if (meshes.length > 2) {
-      meshes[0].material = whitematerial;
-      meshes[1].material = whitematerial;
-      if (meshes.length > 3) meshes[2].material = whitematerial;
-    }
-  }
-
-  function changeMaterialToBlue() {
-    console.log(whitematerial);
-    currentMaterial = material;
-    // meshes.sort(compareMeshes);
-    meshes[0].material = material;
-    if (meshes.length > 2) {
-      meshes[0].material = material;
-      meshes[1].material = material;
-      if (meshes.length > 3) meshes[2].material = material;
-    }
-    // meshes[1].material = material;
-  }
 
   animate();
   //2A3739
@@ -423,15 +400,10 @@
 
   <canvas id="bg"></canvas>
   <div class="options">
-    <button on:click={changeMaterial}> white</button>
-    <button on:click={changeMaterialToBlue}>blue</button>
-    <button on:click={() => loadGltf(pieces[1])}>pawn</button>
-    <Buttons on:click={() => loadGltf(pieces[1])} currentPiece />
-    <button on:click={() => loadGltf(pieces[0])}>rook</button>
-    <button on:click={() => loadGltf(pieces[2])}>knight</button>
-    <button on:click={() => loadGltf(pieces[3])}>king</button>
-    <button on:click={() => loadGltf(pieces[4])}>queen</button>
-    <button on:click={() => loadGltf(pieces[5])}>bishop</button>
+    <MaterialChanger bind:meshes bind:currentMaterial {whitematerial} {material} />
+    {#each pieces as piece}
+      <Buttons on:click={() => loadGltf(piece)} {currentPiece} ownPiece={piece} />
+    {/each}
   </div>
 </main>
 
