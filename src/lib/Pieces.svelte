@@ -14,10 +14,10 @@
   let bgCamera, bgScene;
   let currentMaterial;
   let bgmeshes = [];
-  const pieces = ["rook", "pawn", "knight", "king", "queen", "bishop"];
+  const pieces = ["king", "queen", "bishop", "knight", "rook", "pawn"];
   const materials = [true, false, true, false, false, false, false];
   const positions = [
-    [0, 2, 0],
+    [0, 2.1, 0],
     [-2, -1, 4],
     [1, -0.2, 4],
 
@@ -29,17 +29,19 @@
   let decelerationDirection = { x: 0, y: 0 };
   let initialMouseDownPosition = { x: 0, y: 0 };
 
-  function addPieceToWorldFromModel(model, index, isEye) {
+  function addPieceToWorldFromModel(model, index, isEye, first) {
     if (meshnames.find((mesh) => mesh === model.name) === undefined) {
       console.log(model.name + " " + isEye);
       if (model.name === "pawn_eye") isEye = true;
-      if (model.name === "rook_1") isEye = true;
-      if (model.name === "rook_2") isEye = true;
+      if (first && model.name === "king") isEye = true;
       const isTransparent = !isEye;
+      console.log(currentMaterial);
       const mesh = new THREE.Mesh(model.geometry, isTransparent ? currentMaterial : model.material);
       mesh.position.set(...positions[index]);
 
-      mesh.scale.set(3.75, 3.75, 3.75);
+      if (model.name === "pawn_eye" || model.name == "pawn") {
+        mesh.scale.set(4, 4, 4);
+      } else mesh.scale.set(3.3, 3.3, 3.3);
 
       mesh.rotation.set(0, 0, 0);
       mesh.name = model.name;
@@ -65,9 +67,16 @@
 
     if (meshes.length > 1) {
       let selectedObject = scene.getObjectByName(meshes[0].name);
+      let selectedObjectBg = scene.getObjectByName(bgmeshes[0].name);
+      let selectedObjectBg2 = scene.getObjectByName(bgmeshes[1].name);
+      let selectedObjectBg3 = scene.getObjectByName(bgmeshes[2].name);
+      console.log(selectedObjectBg2);
       console.log(selectedObject.name.includes(piece));
-
-      if (!selectedObject.name.includes(piece)) {
+      console.log(selectedObject.name);
+      const isBishop = piece === "bishop" && selectedObject.name === "Cube016";
+      const isQueen = piece === "queen" && selectedObject.name === "Cylinder003";
+      console.log(isBishop);
+      if (!selectedObject.name.includes(piece) && !isBishop && !isQueen) {
         let selectedObject2 = scene.getObjectByName(meshes[1].name);
         let selectedObject3;
         let selectedObject4;
@@ -80,6 +89,9 @@
         console.log(selectedObject);
 
         if (selectedObject !== undefined) {
+          scene.remove(bgmeshes[0]);
+          scene.remove(bgmeshes[1]);
+          scene.remove(bgmeshes[2]);
           let initialRotation = selectedObject.rotation.clone();
           let targetRotation = new THREE.Euler(Math.PI * 1.5, 0, 0); // You can adjust the target rotation
           let startTime = Date.now();
@@ -135,18 +147,20 @@
             addPieceToWorldFromModel(child, 0, true);
           } else if (piece == "king" || piece == "knight") {
             let ogmodel = gltf.scene.children.find((mesh) => mesh.name === piece);
-            addPieceToWorldFromModel(ogmodel, 0, false);
+            whitematerial = ogmodel.material;
+
+            if (first) currentMaterial = whitematerial;
+            addPieceToWorldFromModel(ogmodel, 0, false, first);
           } else {
             let ogmodel = gltf.scene.children.find((mesh) => mesh.name === piece);
             let model = ogmodel.children[0];
-            addPieceToWorldFromModel(model, 0, false);
+            addPieceToWorldFromModel(model, 0, false, first);
 
             if (piece === "rook" || piece === "bishop") {
+              console.log(ogmodel);
               let model2 = ogmodel.children[1];
-              whitematerial = model2.material;
-              currentMaterial = whitematerial;
-              console.log(whitematerial);
-              addPieceToWorldFromModel(model2, 0, false);
+
+              addPieceToWorldFromModel(model2, 0, false, first);
             }
             if (piece === "queen") {
               let model2 = ogmodel.children[1];
@@ -211,8 +225,26 @@
       });
     };
 
-    if (piece === "rook" && first) {
+    if (piece === "king" && first) {
       loadNewModel(piece);
+    }
+    console.log(bgmeshes);
+    //let selectedObject = scene.getObjectByName(meshes[0].name);
+    bgmeshes = [];
+    for (let i = 0; i < 3; i++) {
+      const loader2 = new GLTFLoader();
+      loader2.load(`bg_${piece}.glb`, function (gltf) {
+        let child = gltf.scene.children[0]; // Assuming you have a single child in the GLTF scene
+        child.material = new THREE.MeshStandardMaterial({
+          color: 0x141414,
+        });
+        child.position.set(-5.5 + i * 4.1, 1.8, -2);
+        child.scale.set(1, 1, 1);
+        child.rotation.set(1.7, 0, 0);
+        child.name = piece.name;
+        scene.add(child);
+        bgmeshes.push(child);
+      });
     }
   };
 
@@ -324,22 +356,6 @@
     });
 
     window.addEventListener("resize", onWindowResize);
-
-    for (let i = 0; i < 3; i++) {
-      const loader2 = new GLTFLoader();
-      loader2.load(`background.glb`, function (gltf) {
-        let child = gltf.scene.children[0]; // Assuming you have a single child in the GLTF scene
-        child.material = new THREE.MeshStandardMaterial({
-          color: 0x141414,
-        });
-        child.position.set(0 + i * 3.35, 2.3, -2);
-        child.scale.set(1, 1, 1);
-        child.rotation.set(0, 0, 0);
-
-        scene.add(child);
-        bgmeshes.push(child);
-      });
-    }
   }
 
   function onWindowResize() {
@@ -358,10 +374,10 @@
   function animate() {
     if (bgmeshes.length > 2) {
       for (let i = 0; i < bgmeshes.length; i++) {
-        if (bgmeshes[i].position.x < -5) {
+        if (bgmeshes[i].position.x < -7.3) {
           bgmeshes[i].position.x = 5;
         } else {
-          bgmeshes[i].position.x -= 0.01;
+          bgmeshes[i].position.x -= 0.005;
         }
       }
     }
@@ -400,10 +416,12 @@
 
   <canvas id="bg"></canvas>
   <div class="options">
+    <div class="pieceoptions">
+      {#each pieces as piece}
+        <Buttons on:click={() => loadGltf(piece)} {currentPiece} ownPiece={piece} />
+      {/each}
+    </div>
     <MaterialChanger bind:meshes bind:currentMaterial {whitematerial} {material} />
-    {#each pieces as piece}
-      <Buttons on:click={() => loadGltf(piece)} {currentPiece} ownPiece={piece} />
-    {/each}
   </div>
 </main>
 
@@ -414,9 +432,15 @@
     left: 0;
     z-index: 50;
     width: 100vw;
-    height: 50px;
+    height: 130px;
+    display: flex;
+    justify-content: center;
+    place-items: center;
+    flex-direction: column;
+  }
+  .pieceoptions {
+    height: 30px;
     gap: 40px;
-    margin-bottom: 40px;
     display: flex;
     justify-content: center;
     place-items: center;

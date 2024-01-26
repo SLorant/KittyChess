@@ -37,18 +37,6 @@
     // 0xe7e7e7
     //
 
-    const options = {
-      enableSwoopingCamera: false,
-      enableRotation: true,
-      transmission: 1,
-      thickness: 0.5,
-      roughness: 0.32,
-      envMapIntensity: 0,
-      clearcoat: 1,
-      clearcoatRoughness: 1,
-      color: 0x79e0e8,
-    };
-
     const material = new THREE.MeshPhysicalMaterial({
       color: 0x79e0e8,
       transmission: 1,
@@ -217,7 +205,6 @@
     camera.updateProjectionMatrix();
     camera.rotation.set(0, 0, 0);
     renderer.setSize(window.innerWidth, window.innerHeight);
-    console.log(camera.position);
     render();
   }
   function onDocumentMouseMove(event) {
@@ -231,8 +218,8 @@
     targetY = mouseY * 0.001;
 
     if (meshes.length > 8) {
-      bgmesh.rotation.x += 0.0005 * (targetX - bgmesh.rotation.x);
-      bgmesh.rotation.y += 0.02 * (targetY - bgmesh.rotation.y);
+      bgmesh.rotation.x += 0.002 * (targetY - bgmesh.rotation.x);
+      bgmesh.rotation.y += 0.002 * (targetX - bgmesh.rotation.y);
     }
     renderer.render(scene, camera);
   }

@@ -42,6 +42,8 @@
   button {
     border: none;
     margin-bottom: 130px;
+    background: none;
+    cursor: pointer;
   }
   button:hover {
     background: none;
