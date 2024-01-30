@@ -29,6 +29,7 @@
       if (meshes.length > 3) meshes[2].material = material;
     }
   }
+  console.log(currentMaterial);
 </script>
 
 <div class="container">
@@ -38,9 +39,13 @@
     <div class="x white">
       <X on:click={changeMaterialToBlue} />
     </div>
-  {:else}
+  {:else if currentMaterial === material}
     <div class="x blue">
       <X on:click={changeMaterial} />
+    </div>
+  {:else}
+    <div class="x white">
+      <X on:click={changeMaterialToBlue} />
     </div>
   {/if}
 </div>
@@ -49,7 +54,7 @@
   .container {
     position: relative;
     width: 30px;
-    height: 45px;
+    height: 20px;
     gap: 10px;
     display: flex;
     justify-content: center;
@@ -57,10 +62,10 @@
   }
   .x {
     position: absolute;
-    top: 0;
+    top: -12px;
   }
   .white {
-    left: -35px;
+    left: -37px;
   }
   .blue {
     left: 20px;

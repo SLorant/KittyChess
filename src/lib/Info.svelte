@@ -7,6 +7,8 @@
   let meshes = [];
   let mouseX = 0;
   let mouseY = 0;
+  const mouseSpeed = 0.005; // Adjust this value to control the speed of the head movement
+  const dampingFactor = 0.1;
   const meshnames = [];
 
   let targetX = 0;
@@ -52,7 +54,7 @@
                 color: 0x414141,
               })*/
     const loader2 = new GLTFLoader();
-    loader2.load(`background.glb`, function (gltf) {
+    loader2.load(`bg_knight.glb`, function (gltf) {
       gltf.scene.traverse(function (child) {
         let mesh = new THREE.Mesh(
           child.geometry,
@@ -60,17 +62,17 @@
             color: 0x141414,
           })
         );
-        mesh.position.set(0, -0.1, 2);
-        mesh.scale.set(1.6, 1.6, 1.6);
+        mesh.position.set(-4, -1.5, 2);
+        mesh.scale.set(1, 1, 1);
         mesh.renderOrder = 5;
-        mesh.rotation.set(0, 0, 0);
+        mesh.rotation.set(1.2, 0, 0);
         bgmesh = mesh;
         scene.add(mesh);
       });
     });
 
     const pieces = ["rook", "pawn", "knight", "king"];
-    const positions = [[1.5, -1.2, 4]];
+    const positions = [[0.8, -0.9, 11]];
 
     const loader = new GLTFLoader();
     loader.load(`bishop.glb`, function (gltf) {
@@ -80,7 +82,9 @@
         } else {
           let ogmodel = gltf.scene.children.find((mesh) => mesh.name === "bishop");
           let model = ogmodel.children[0];
+          let model2 = ogmodel.children[1];
           addPieceToWorldFromModel(model);
+          addPieceToWorldFromModel(model2);
         }
       });
 
@@ -89,22 +93,22 @@
 
     const pointLight = new THREE.DirectionalLight(0xffffff);
     pointLight.position.set(5, 5, 5);
-    pointLight.intensity = 3;
+    pointLight.intensity = 2;
 
     const pointLight3 = new THREE.DirectionalLight(0xffffff);
     pointLight3.position.set(0, 2, 10);
     pointLight3.intensity = 1;
 
-    const pointLight2 = new THREE.DirectionalLight(0x85f0ff);
+    const pointLight2 = new THREE.DirectionalLight(0xacf5ff);
     pointLight2.position.set(-5, 3, 5);
-    pointLight2.intensity = 5;
+    pointLight2.intensity = 3;
 
     const pointLight4 = new THREE.DirectionalLight(0xffffff);
     pointLight4.position.set(0, -3, 10);
 
     const pointLight5 = new THREE.PointLight(0xffffff);
     pointLight5.position.set(0, 0, -1);
-    pointLight5.intensity = 30;
+    pointLight5.intensity = 1;
 
     scene.add(pointLight, pointLight2, pointLight3, pointLight4, pointLight5);
 
@@ -143,14 +147,18 @@
   function render() {
     camera.rotation.set(0, 0, 0);
 
-    targetX = mouseX * 0.001;
-    targetY = mouseY * 0.001;
-
-    if (meshes.length > 1) {
-      meshes[0].rotation.x += 0.02 * (targetY - bgmesh.rotation.x);
-      meshes[0].rotation.y += 0.02 * (targetX - bgmesh.rotation.y);
-      meshes[1].rotation.x += 0.02 * (targetY - bgmesh.rotation.x);
-      meshes[1].rotation.y += 0.02 * (targetX - bgmesh.rotation.y);
+    targetX = (mouseX / 5 - 200) * mouseSpeed;
+    targetY = (mouseY / 10 - 50) * mouseSpeed;
+    console.log(mouseX);
+    if (meshes.length > 0) {
+      meshes.forEach((mesh) => {
+        mesh.rotation.x += dampingFactor * (targetY - mesh.rotation.x);
+        if (mouseX > 180) {
+          mesh.rotation.y += dampingFactor * (targetX - mesh.rotation.y);
+        } else {
+          mesh.rotation.y += dampingFactor * (targetX - mesh.rotation.y);
+        }
+      });
     }
     renderer.render(scene, camera);
   }

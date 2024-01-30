@@ -13,10 +13,35 @@
   let targetY = 0;
   const windowHalfX = window.innerWidth / 2;
   const windowHalfY = window.innerHeight / 2;
-  init();
-  render();
+
   let bgmesh;
 
+  const isMobile = () => {
+    // User agent string method
+    let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+    // Screen resolution method
+    if (!isMobile) {
+      let screenWidth = window.screen.width;
+      let screenHeight = window.screen.height;
+      isMobile = screenWidth < 768 || screenHeight < 768;
+    }
+
+    // Touch events method
+    if (!isMobile) {
+      isMobile = "ontouchstart" in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
+    }
+
+    // CSS media queries method
+    if (!isMobile) {
+      let bodyElement = document.getElementsByTagName("body")[0];
+      isMobile = window.getComputedStyle(bodyElement).getPropertyValue("content").indexOf("mobile") !== -1;
+    }
+
+    return isMobile;
+  };
+  init();
+  render();
   function compareMeshes(mesh1, mesh2) {
     if (mesh1.position.x < mesh2.position.x) {
       return -1;
@@ -38,7 +63,7 @@
     //
 
     const material = new THREE.MeshPhysicalMaterial({
-      color: 0x79e0e8,
+      color: 0x8bf7ff,
       transmission: 1,
       transparent: true,
 
@@ -57,11 +82,12 @@
       console.log(meshnames.find((mesh) => mesh === model.name));
       if (meshnames.find((mesh) => mesh === model.name) === undefined) {
         const mesh = new THREE.Mesh(model.geometry, isTransparent ? material : model.material);
+        if (isMobile()) mesh.material = material;
         mesh.position.set(...positions[index]);
         if (model.name === "king") {
-          mesh.scale.set(4.25, 4.25, 4.25);
+          isMobile() ? mesh.scale.set(4, 4, 4) : mesh.scale.set(4.25, 4.25, 4.25);
         } else {
-          mesh.scale.set(3.75, 3.75, 3.75);
+          isMobile() ? mesh.scale.set(3.5, 3.5, 3.5) : mesh.scale.set(3.75, 3.75, 3.75);
         }
         mesh.rotation.set(0, 0, 0);
 
@@ -79,9 +105,9 @@
         const mesh = new THREE.Mesh(model.geometry, isTransparent ? material : model.material);
         mesh.position.set(...positions[index]);
         if (model.name === "king_eye") {
-          mesh.scale.set(4.25, 4.25, 4.25);
+          isMobile() ? mesh.scale.set(4, 4, 4) : mesh.scale.set(4.25, 4.25, 4.25);
         } else {
-          mesh.scale.set(3.75, 3.75, 3.75);
+          isMobile() ? mesh.scale.set(3.5, 3.5, 3.5) : mesh.scale.set(3.75, 3.75, 3.75);
         }
         mesh.rotation.set(0, 0, 0);
 
@@ -102,7 +128,9 @@
               color: 0x414141,
             })*/
     const loader2 = new GLTFLoader();
-    loader2.load(`background.glb`, function (gltf) {
+    console.log(isMobile());
+    const bg = isMobile() ? "bg_phone.glb" : "background.glb";
+    loader2.load(`${bg}`, function (gltf) {
       gltf.scene.traverse(function (child) {
         let mesh = new THREE.Mesh(
           child.geometry,
@@ -110,8 +138,9 @@
             color: 0x141414,
           })
         );
-        mesh.position.set(0, -0.1, 2);
-        mesh.scale.set(1.6, 1.6, 1.6);
+        isMobile() ? mesh.position.set(0, 0.1, 2) : mesh.position.set(0, -0.1, 2);
+
+        isMobile() ? mesh.scale.set(0.7, 0.7, 0.7) : mesh.scale.set(1.6, 1.6, 1.6);
         mesh.renderOrder = 5;
         mesh.rotation.set(0, 0, 0);
         bgmesh = mesh;
@@ -119,15 +148,23 @@
       });
     });
 
-    const pieces = ["rook", "pawn", "knight", "king"];
-    const positions = [
+    let pieces = ["rook", "pawn", "knight", "king"];
+    let positions = [
       [-1.5, 0.8, 4],
       [-2, -1, 4],
       [1, -0.2, 4],
 
       [2, 0.8, 0],
     ];
-    const materials = [true, false, true, false, false];
+    let materials = [true, false, true, false, false];
+    if (isMobile()) {
+      pieces = ["knight", "king"];
+      positions = [
+        [0, 0.8, 3],
+        [0, -1, 0],
+      ];
+      materials = [true, false, true];
+    }
     for (let i = 0; i < pieces.length; i++) {
       let piece = pieces[i];
 
@@ -154,7 +191,7 @@
           }
         });
 
-        render();
+        //render();
       });
     }
 
@@ -250,11 +287,20 @@
     else group.position.x += 0.00025 * dir.x * speed;
 
     group.position.y -= 0.001 * dir.y * speed;
-    if (group.position.x > 1 || group.position.x < -1.2) {
-      dir.x *= -1;
-    }
-    if (group.position.y > 0.5 || group.position.y < -0.3) {
-      dir.y *= -1;
+    if (isMobile()) {
+      if (group.position.x > 0.3 || group.position.x < -0.3) {
+        dir.x *= -1;
+      }
+      if (group.position.y > 0.5 || group.position.y < -0.3) {
+        dir.y *= -1;
+      }
+    } else {
+      if (group.position.x > 1 || group.position.x < -1.2) {
+        dir.x *= -1;
+      }
+      if (group.position.y > 0.5 || group.position.y < -0.3) {
+        dir.y *= -1;
+      }
     }
   }
 
@@ -292,9 +338,29 @@
 
       meshes[7].rotation.z -= 0.005;
       meshes[8].rotation.z -= 0.005;
+    } else if (isMobile()) {
+      if (meshes.length > 3) {
+        if (meshnames[2] !== "rook_1") {
+          console.log("AAAAAAAAAAAAAA");
+          meshes = meshes.sort(compareMeshes);
+          meshnames[2] = "rook_1";
+          console.log(meshes);
+        }
+        addToGroup(pawngroup, 0, false);
+        addToGroup(knightgroup, 2, false);
+
+        move(pawngroup, mousedir, 2, true);
+        move(knightgroup, rookdir, 1.5);
+
+        meshes[0].rotation.z -= 0.005;
+        meshes[1].rotation.z -= 0.005;
+
+        meshes[2].rotation.z += 0.002;
+        meshes[3].rotation.z += 0.002;
+      }
     }
     controls.update();
-    renderer.render(scene, camera);
+    //renderer.render(scene, camera);
     requestAnimationFrame(animate);
   }
 
@@ -303,11 +369,16 @@
 </script>
 
 <main>
-  <div>
-    <a href="/">HOME</a>
-    <a href="pieces">PIECES</a>
-    <a href="info">INFO</a>
-  </div>
+  {#if isMobile()}
+    <div>asd</div>
+  {:else}
+    <div>
+      <a href="/">HOME</a>
+      <a href="pieces">PIECES</a>
+      <a href="info">INFO</a>
+    </div>
+  {/if}
+
   <canvas id="bg"></canvas>
 </main>
 

@@ -5,6 +5,10 @@
   import { GUI } from "dat.gui";
   import Buttons from "./Buttons.svelte";
   import MaterialChanger from "./MaterialChanger.svelte";
+  import * as TWEEN from "@tweenjs/tween.js";
+  import { gsap, Power1 } from "gsap";
+  import { TweenLite } from "gsap/gsap-core";
+
   let camera, scene, renderer, controls;
   let meshes = [];
   let meshnames = [];
@@ -29,36 +33,66 @@
   let decelerationDirection = { x: 0, y: 0 };
   let initialMouseDownPosition = { x: 0, y: 0 };
 
+  const isMobile = () => {
+    // User agent string method
+    let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+    // Screen resolution method
+    if (!isMobile) {
+      let screenWidth = window.screen.width;
+      let screenHeight = window.screen.height;
+      isMobile = screenWidth < 768 || screenHeight < 768;
+    }
+
+    // Touch events method
+    if (!isMobile) {
+      isMobile = "ontouchstart" in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
+    }
+
+    // CSS media queries method
+    if (!isMobile) {
+      let bodyElement = document.getElementsByTagName("body")[0];
+      isMobile = window.getComputedStyle(bodyElement).getPropertyValue("content").indexOf("mobile") !== -1;
+    }
+
+    return isMobile;
+  };
+
   function addPieceToWorldFromModel(model, index, isEye, first) {
-    if (meshnames.find((mesh) => mesh === model.name) === undefined) {
-      console.log(model.name + " " + isEye);
+    if (meshes.length < 5 && meshnames.find((mesh) => mesh === model.name) === undefined) {
       if (model.name === "pawn_eye") isEye = true;
       if (first && model.name === "king") isEye = true;
       const isTransparent = !isEye;
-      console.log(currentMaterial);
       const mesh = new THREE.Mesh(model.geometry, isTransparent ? currentMaterial : model.material);
       mesh.position.set(...positions[index]);
 
       if (model.name === "pawn_eye" || model.name == "pawn") {
         mesh.scale.set(4, 4, 4);
+      } else if (model.name === "king" || model.name == "king_eye") {
+        mesh.scale.set(3.1, 3.1, 3.1);
       } else mesh.scale.set(3.3, 3.3, 3.3);
 
       mesh.rotation.set(0, 0, 0);
       mesh.name = model.name;
-      meshes.push(mesh);
-      meshnames.push(model.name);
-      scene.add(mesh);
-    } else if (model.name === "pawn") {
-      const mesh = new THREE.Mesh(model.geometry, material);
-      mesh.position.set(...positions[index]);
-      mesh.scale.set(3.75, 3.75, 3.75);
-      mesh.rotation.set(0, 0, 0);
-      mesh.name = model.name;
-      meshes.push(mesh);
-      meshnames.push(model.name);
 
-      scene.add(mesh);
+      console.log(scene.children);
+      if (scene.children.length < 12) {
+        meshes.push(mesh);
+        meshnames.push(model.name);
+        scene.add(mesh);
+      }
     }
+    // } else if (model.name === "pawn") {
+    //   const mesh = new THREE.Mesh(model.geometry, isTransparent ? currentMaterial : model.material);
+    //   mesh.position.set(...positions[index]);
+    //   mesh.scale.set(3.75, 3.75, 3.75);
+    //   mesh.rotation.set(0, 0, 0);
+    //   mesh.name = model.name;
+    //   meshes.push(mesh);
+    //   meshnames.push(model.name);
+
+    //   scene.add(mesh);
+    // }
   }
 
   const loadGltf = (piece, first) => {
@@ -67,15 +101,10 @@
 
     if (meshes.length > 1) {
       let selectedObject = scene.getObjectByName(meshes[0].name);
-      let selectedObjectBg = scene.getObjectByName(bgmeshes[0].name);
-      let selectedObjectBg2 = scene.getObjectByName(bgmeshes[1].name);
-      let selectedObjectBg3 = scene.getObjectByName(bgmeshes[2].name);
-      console.log(selectedObjectBg2);
-      console.log(selectedObject.name.includes(piece));
-      console.log(selectedObject.name);
+
       const isBishop = piece === "bishop" && selectedObject.name === "Cube016";
       const isQueen = piece === "queen" && selectedObject.name === "Cylinder003";
-      console.log(isBishop);
+
       if (!selectedObject.name.includes(piece) && !isBishop && !isQueen) {
         let selectedObject2 = scene.getObjectByName(meshes[1].name);
         let selectedObject3;
@@ -86,12 +115,12 @@
           //scene.remove(selectedObject3);
         }
 
-        console.log(selectedObject);
-
         if (selectedObject !== undefined) {
-          scene.remove(bgmeshes[0]);
-          scene.remove(bgmeshes[1]);
-          scene.remove(bgmeshes[2]);
+          // bgmeshes[0].material.transparent = true;
+          console.log(bgmeshes.length);
+
+          // console.log(bgmeshes[0].opacity);
+
           let initialRotation = selectedObject.rotation.clone();
           let targetRotation = new THREE.Euler(Math.PI * 1.5, 0, 0); // You can adjust the target rotation
           let startTime = Date.now();
@@ -114,7 +143,38 @@
               }
               selectedObject.rotation.z = THREE.MathUtils.lerp(initialRotation.z, targetRotation.z, t);
               requestAnimationFrame(rotateAndRemove);
-            } else {
+            } else if (meshes.length < 5) {
+              console.log(meshes);
+              if (bgmeshes.length > 2) {
+                scene.remove(bgmeshes[0]);
+                scene.remove(bgmeshes[1]);
+                scene.remove(bgmeshes[2]);
+                bgmeshes = [];
+              }
+
+              for (let i = 0; i < 3; i++) {
+                const loader2 = new GLTFLoader();
+                loader2.load(`bg_${piece}.glb`, function (gltf) {
+                  let child = gltf.scene.children[0]; // Assuming you have a single child in the GLTF scene
+                  child.material = new THREE.MeshStandardMaterial({
+                    color: 0x141414,
+                    //transparent: true,
+                  });
+                  child.position.set(-5.5 + i * 4.1, 1.8, -2);
+                  child.scale.set(1, 1, 1);
+                  child.rotation.set(1.7, 0, 0);
+                  child.name = "bg" + i;
+                  console.log(scene.children);
+                  if (bgmeshes.length < 3) {
+                    console.log(bgmeshes);
+                    scene.add(child);
+                    bgmeshes.push(child);
+                    //child.material.opacity = 0;
+                    const fadeInDuration = 1; // Adjust the duration as needed
+                    //gsap.to(child.material, { duration: 0.3, opacity: 1, ease: Power1.easeInOut });
+                  }
+                });
+              }
               rotationBefore = selectedObject.rotation;
               positionBefore = selectedObject.position;
               // Rotation complete, now remove the object
@@ -128,7 +188,6 @@
               }
               meshes = meshes.filter((mesh) => mesh.name.includes(piece));
               meshnames = meshnames.filter((mesh) => mesh.includes(piece));
-              console.log(meshes);
               loadNewModel(piece);
             }
           }
@@ -143,9 +202,9 @@
       const loader = new GLTFLoader();
       loader.load(`${piece}.glb`, function (gltf) {
         gltf.scene.traverse(function (child) {
-          if (child.name == `${piece}_eye` || child.name == "pawn") {
+          if (child.name == `${piece}_eye`) {
             addPieceToWorldFromModel(child, 0, true);
-          } else if (piece == "king" || piece == "knight") {
+          } else if (piece == "king" || piece == "knight" || piece === "pawn") {
             let ogmodel = gltf.scene.children.find((mesh) => mesh.name === piece);
             whitematerial = ogmodel.material;
 
@@ -157,7 +216,6 @@
             addPieceToWorldFromModel(model, 0, false, first);
 
             if (piece === "rook" || piece === "bishop") {
-              console.log(ogmodel);
               let model2 = ogmodel.children[1];
 
               addPieceToWorldFromModel(model2, 0, false, first);
@@ -228,24 +286,34 @@
     if (piece === "king" && first) {
       loadNewModel(piece);
     }
-    console.log(bgmeshes);
-    //let selectedObject = scene.getObjectByName(meshes[0].name);
-    bgmeshes = [];
-    for (let i = 0; i < 3; i++) {
-      const loader2 = new GLTFLoader();
-      loader2.load(`bg_${piece}.glb`, function (gltf) {
-        let child = gltf.scene.children[0]; // Assuming you have a single child in the GLTF scene
-        child.material = new THREE.MeshStandardMaterial({
-          color: 0x141414,
+    if (first) {
+      for (let i = 0; i < 3; i++) {
+        const loader2 = new GLTFLoader();
+        loader2.load(`bg_${piece}.glb`, function (gltf) {
+          let child = gltf.scene.children[0]; // Assuming you have a single child in the GLTF scene
+          child.material = new THREE.MeshStandardMaterial({
+            color: 0x141414,
+            // transparent: true,
+          });
+          child.renderorder = -5;
+          child.position.set(-5.5 + i * 4.1, 1.8, -2);
+          child.scale.set(1, 1, 1);
+          child.rotation.set(1.7, 0, 0);
+          child.name = "bg" + i;
+          console.log(scene.children);
+          if (bgmeshes.length < 3) {
+            console.log(bgmeshes);
+            scene.add(child);
+            bgmeshes.push(child);
+            //child.material.opacity = 0.4;
+            const fadeInDuration = 1; // Adjust the duration as needed
+            //gsap.to(child.material, { duration: 0.3, opacity: 1, ease: Power1.easeInOut });
+          }
         });
-        child.position.set(-5.5 + i * 4.1, 1.8, -2);
-        child.scale.set(1, 1, 1);
-        child.rotation.set(1.7, 0, 0);
-        child.name = piece.name;
-        scene.add(child);
-        bgmeshes.push(child);
-      });
+      }
     }
+    //let selectedObject = scene.getObjectByName(meshes[0].name);
+    //gmeshes = [];
   };
 
   init();
@@ -261,7 +329,7 @@
     //
 
     material = new THREE.MeshPhysicalMaterial({
-      color: 0x79e0e8,
+      color: 0x8bf7ff,
       transmission: 1,
       transparent: true,
 
@@ -282,22 +350,24 @@
     pointLight3.position.set(0, 2, 10);
     pointLight3.intensity = 1;
 
-    const pointLight2 = new THREE.DirectionalLight(0x85f0ff);
+    const pointLight2 = new THREE.DirectionalLight(0xacf5ff);
     pointLight2.position.set(-5, 3, 5);
-    pointLight2.intensity = 5;
+    pointLight2.intensity = 3;
 
     const pointLight4 = new THREE.DirectionalLight(0xffffff);
     pointLight4.position.set(0, -3, 10);
 
     const pointLight5 = new THREE.PointLight(0xffffff);
     pointLight5.position.set(0, 0, -1);
-    pointLight5.intensity = 30;
+    pointLight5.intensity = 1;
 
     scene.add(pointLight, pointLight2, pointLight3, pointLight4, pointLight5);
 
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
+    //renderer.sortObjects = false;
+
     document.body.appendChild(renderer.domElement);
 
     // controls = new OrbitControls(camera, renderer.domElement);
@@ -309,8 +379,6 @@
     // controls.enableZoom = false;
     // controls.enablePan = false;
     // controls.update();
-
-    document.addEventListener("mousemove", onMouseMove);
 
     let previousMousePosition = {
       x: 0,
@@ -338,22 +406,67 @@
       };
     }
 
-    document.addEventListener("mousedown", () => {
+    function onTouchMove(event) {
+      const touch = event.touches[0];
+
+      const deltaMove = {
+        x: touch.clientX - previousMousePosition.x,
+        y: touch.clientY - previousMousePosition.y,
+      };
+
+      if (isDragging) {
+        meshes.forEach((mesh) => {
+          mesh.rotation.x += deltaMove.y * rotationSpeed;
+          mesh.rotation.y += deltaMove.x * rotationSpeed;
+        });
+      }
+
+      previousMousePosition = {
+        x: touch.clientX,
+        y: touch.clientY,
+      };
+    }
+    function onTouchStart(event) {
+      const touch = event.touches[0];
+
       isDragging = true;
       initialMouseDownPosition = {
-        x: event.clientX,
-        y: event.clientY,
+        x: touch.clientX,
+        y: touch.clientY,
       };
-    });
+    }
+    if (isMobile()) {
+      document.addEventListener("touchmove", onTouchMove, { passive: false });
+      document.addEventListener("touchstart", onTouchStart);
+      document.addEventListener("touchend", onTouchEnd);
+    } else {
+      document.addEventListener("mousemove", onMouseMove);
+      document.addEventListener("mousedown", () => {
+        isDragging = true;
+        initialMouseDownPosition = {
+          x: event.clientX,
+          y: event.clientY,
+        };
+      });
 
-    document.addEventListener("mouseup", () => {
+      document.addEventListener("mouseup", () => {
+        isDragging = false;
+        isDecelerating = true;
+        decelerationDirection = {
+          x: previousMousePosition.x - initialMouseDownPosition.x,
+          y: previousMousePosition.y - initialMouseDownPosition.y,
+        };
+      });
+    }
+
+    function onTouchEnd() {
       isDragging = false;
       isDecelerating = true;
       decelerationDirection = {
         x: previousMousePosition.x - initialMouseDownPosition.x,
         y: previousMousePosition.y - initialMouseDownPosition.y,
       };
-    });
+    }
 
     window.addEventListener("resize", onWindowResize);
   }
@@ -363,7 +476,6 @@
     camera.updateProjectionMatrix();
     camera.rotation.set(0, 0, 0);
     renderer.setSize(window.innerWidth, window.innerHeight);
-    console.log(camera.position);
     render();
   }
 
@@ -393,7 +505,7 @@
       });
 
       // If rotation speed is very small, stop decelerating
-      if (rotationSpeed < 0.001) {
+      if (rotationSpeed < 0.01) {
         isDecelerating = false;
       }
     }
@@ -408,11 +520,15 @@
 </script>
 
 <main>
-  <div class="header">
-    <a href="/">HOME</a>
-    <a href="pieces">PIECES</a>
-    <a href="info">INFO</a>
-  </div>
+  {#if isMobile()}
+    <div>asd</div>
+  {:else}
+    <div>
+      <a href="/">HOME</a>
+      <a href="pieces">PIECES</a>
+      <a href="info">INFO</a>
+    </div>
+  {/if}
 
   <canvas id="bg"></canvas>
   <div class="options">
