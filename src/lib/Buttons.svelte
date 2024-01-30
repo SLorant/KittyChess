@@ -1,12 +1,12 @@
 <script>
   // Dynamically import the component based on ownPiece value
   import { onMount } from "svelte";
-
+  export let isMobile;
   export let currentPiece;
   export let ownPiece;
   let PieceComponent;
   let WhitePieceComponent;
-
+  console.log(isMobile);
   // Function to dynamically import the piece component
   const importPiece = async () => {
     try {
@@ -31,17 +31,16 @@
 <button on:click>
   {#if currentPiece === ownPiece}
     {#if PieceComponent}
-      <svelte:component this={WhitePieceComponent}></svelte:component>
+      <svelte:component this={WhitePieceComponent} {isMobile}></svelte:component>
     {/if}
   {:else}
-    <svelte:component this={PieceComponent}></svelte:component>
+    <svelte:component this={PieceComponent} {isMobile}></svelte:component>
   {/if}
 </button>
 
 <style>
   button {
     border: none;
-    margin-bottom: 130px;
     background: none;
     cursor: pointer;
   }

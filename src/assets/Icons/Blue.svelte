@@ -14,6 +14,7 @@
   button {
     border: none;
     cursor: pointer;
+    background: none;
   }
   button:hover {
     background: none;

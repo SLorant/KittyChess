@@ -370,7 +370,12 @@
 
 <main>
   {#if isMobile()}
-    <div>asd</div>
+    <div href="info">
+      <a
+        href="pieces
+      ">Pasdasd</a
+      >
+    </div>
   {:else}
     <div>
       <a href="/">HOME</a>

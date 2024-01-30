@@ -71,7 +71,7 @@
       } else if (model.name === "king" || model.name == "king_eye") {
         mesh.scale.set(3.1, 3.1, 3.1);
       } else mesh.scale.set(3.3, 3.3, 3.3);
-
+      if (isMobile()) mesh.scale.set(2.2, 2.2, 2.2);
       mesh.rotation.set(0, 0, 0);
       mesh.name = model.name;
 
@@ -162,6 +162,7 @@
                   });
                   child.position.set(-5.5 + i * 4.1, 1.8, -2);
                   child.scale.set(1, 1, 1);
+                  isMobile() && child.scale.set(0.7, 0.7, 0.7);
                   child.rotation.set(1.7, 0, 0);
                   child.name = "bg" + i;
                   console.log(scene.children);
@@ -298,6 +299,7 @@
           child.renderorder = -5;
           child.position.set(-5.5 + i * 4.1, 1.8, -2);
           child.scale.set(1, 1, 1);
+          isMobile() && child.scale.set(0.7, 0.7, 0.7);
           child.rotation.set(1.7, 0, 0);
           child.name = "bg" + i;
           console.log(scene.children);
@@ -415,6 +417,7 @@
       };
 
       if (isDragging) {
+        rotationSpeed = 0.005;
         meshes.forEach((mesh) => {
           mesh.rotation.x += deltaMove.y * rotationSpeed;
           mesh.rotation.y += deltaMove.x * rotationSpeed;
@@ -484,7 +487,7 @@
   }
 
   function animate() {
-    if (bgmeshes.length > 2) {
+    if (isMobile() && bgmeshes.length > 2) {
       for (let i = 0; i < bgmeshes.length; i++) {
         if (bgmeshes[i].position.x < -7.3) {
           bgmeshes[i].position.x = 5;
@@ -494,7 +497,6 @@
       }
     }
     //controls.update();
-
     if (!isDragging && isDecelerating) {
       // Gradually decrease rotation speed when not dragging
       rotationSpeed *= 1 - 0.02;
@@ -505,7 +507,7 @@
       });
 
       // If rotation speed is very small, stop decelerating
-      if (rotationSpeed < 0.01) {
+      if (rotationSpeed < (isMobile() ? 0.0001 : 0.000001)) {
         isDecelerating = false;
       }
     }
@@ -521,9 +523,11 @@
 
 <main>
   {#if isMobile()}
-    <div>asd</div>
+    <div class="header">
+      <a href="info">Pasdasasd</a>
+    </div>
   {:else}
-    <div>
+    <div class="header">
       <a href="/">HOME</a>
       <a href="pieces">PIECES</a>
       <a href="info">INFO</a>
@@ -534,7 +538,7 @@
   <div class="options">
     <div class="pieceoptions">
       {#each pieces as piece}
-        <Buttons on:click={() => loadGltf(piece)} {currentPiece} ownPiece={piece} />
+        <Buttons on:click={() => loadGltf(piece)} {currentPiece} ownPiece={piece} isMobile={isMobile()} />
       {/each}
     </div>
     <MaterialChanger bind:meshes bind:currentMaterial {whitematerial} {material} />
@@ -560,6 +564,7 @@
     display: flex;
     justify-content: center;
     place-items: center;
+    margin-bottom: 130px;
   }
   .header {
     position: absolute;
@@ -596,5 +601,17 @@
     position: absolute;
     top: 0;
     left: 0;
+  }
+
+  @media screen and (max-width: 600px) {
+    .pieceoptions {
+      display: grid;
+      grid-template-columns: auto auto auto;
+      margin-bottom: 200px;
+      gap: 20px;
+    }
+    .options {
+      height: auto;
+    }
   }
 </style>

@@ -70,4 +70,9 @@
   .blue {
     left: 20px;
   }
+  @media screen and (max-width: 600px) {
+    .container {
+      margin-bottom: 40px;
+    }
+  }
 </style>
