@@ -8,6 +8,8 @@
   import * as TWEEN from "@tweenjs/tween.js";
   import { gsap, Power1 } from "gsap";
   import { TweenLite } from "gsap/gsap-core";
+  import isUserUsingMobile from "./CheckDevice";
+  import Header from "./Header.svelte";
 
   let camera, scene, renderer, controls;
   let meshes = [];
@@ -33,30 +35,7 @@
   let decelerationDirection = { x: 0, y: 0 };
   let initialMouseDownPosition = { x: 0, y: 0 };
 
-  const isMobile = () => {
-    // User agent string method
-    let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
-    // Screen resolution method
-    if (!isMobile) {
-      let screenWidth = window.screen.width;
-      let screenHeight = window.screen.height;
-      isMobile = screenWidth < 768 || screenHeight < 768;
-    }
-
-    // Touch events method
-    if (!isMobile) {
-      isMobile = "ontouchstart" in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
-    }
-
-    // CSS media queries method
-    if (!isMobile) {
-      let bodyElement = document.getElementsByTagName("body")[0];
-      isMobile = window.getComputedStyle(bodyElement).getPropertyValue("content").indexOf("mobile") !== -1;
-    }
-
-    return isMobile;
-  };
+  const isMobile = isUserUsingMobile();
 
   function addPieceToWorldFromModel(model, index, isEye, first) {
     if (meshes.length < 5 && meshnames.find((mesh) => mesh === model.name) === undefined) {
@@ -71,11 +50,10 @@
       } else if (model.name === "king" || model.name == "king_eye") {
         mesh.scale.set(3.1, 3.1, 3.1);
       } else mesh.scale.set(3.3, 3.3, 3.3);
-      if (isMobile()) mesh.scale.set(2.2, 2.2, 2.2);
+      if (isMobile) mesh.scale.set(2.2, 2.2, 2.2);
       mesh.rotation.set(0, 0, 0);
       mesh.name = model.name;
 
-      console.log(scene.children);
       if (scene.children.length < 12) {
         meshes.push(mesh);
         meshnames.push(model.name);
@@ -117,7 +95,6 @@
 
         if (selectedObject !== undefined) {
           // bgmeshes[0].material.transparent = true;
-          console.log(bgmeshes.length);
 
           // console.log(bgmeshes[0].opacity);
 
@@ -144,7 +121,6 @@
               selectedObject.rotation.z = THREE.MathUtils.lerp(initialRotation.z, targetRotation.z, t);
               requestAnimationFrame(rotateAndRemove);
             } else if (meshes.length < 5) {
-              console.log(meshes);
               if (bgmeshes.length > 2) {
                 scene.remove(bgmeshes[0]);
                 scene.remove(bgmeshes[1]);
@@ -162,12 +138,10 @@
                   });
                   child.position.set(-5.5 + i * 4.1, 1.8, -2);
                   child.scale.set(1, 1, 1);
-                  isMobile() && child.scale.set(0.7, 0.7, 0.7);
+                  isMobile && child.scale.set(0.7, 0.7, 0.7);
                   child.rotation.set(1.7, 0, 0);
                   child.name = "bg" + i;
-                  console.log(scene.children);
                   if (bgmeshes.length < 3) {
-                    console.log(bgmeshes);
                     scene.add(child);
                     bgmeshes.push(child);
                     //child.material.opacity = 0;
@@ -187,8 +161,17 @@
               if (selectedObject4 !== undefined) {
                 scene.remove(selectedObject4);
               }
-              meshes = meshes.filter((mesh) => mesh.name.includes(piece));
-              meshnames = meshnames.filter((mesh) => mesh.includes(piece));
+
+              if (piece === "queen") {
+                meshes = meshes.filter((mesh) => mesh.name.includes("Cylinder003") || mesh.name.includes(piece));
+                meshnames = meshnames.filter((mesh) => mesh.includes("Cylinder003") || mesh.includes(piece));
+              } else if (piece === "bishop") {
+                meshes = meshes.filter((mesh) => mesh.name.includes("Cube") || mesh.name.includes(piece));
+                meshnames = meshnames.filter((mesh) => mesh.includes("Cube") || mesh.includes(piece));
+              } else {
+                meshes = meshes.filter((mesh) => mesh.name.includes(piece));
+                meshnames = meshnames.filter((mesh) => mesh.includes(piece));
+              }
               loadNewModel(piece);
             }
           }
@@ -234,7 +217,11 @@
         // Set the initial rotation of the new model to be the same as the previous model
         let newModel = meshes[0];
         //  newModel.position = positionBefore;
-        let newModel2 = meshes[1];
+        let newModel2;
+
+        if (meshes.length > 1) {
+          newModel2 = meshes[1];
+        }
         let newModel3;
         let newModel4;
         if (meshes.length > 2) {
@@ -287,6 +274,7 @@
     if (piece === "king" && first) {
       loadNewModel(piece);
     }
+
     if (first) {
       for (let i = 0; i < 3; i++) {
         const loader2 = new GLTFLoader();
@@ -299,12 +287,10 @@
           child.renderorder = -5;
           child.position.set(-5.5 + i * 4.1, 1.8, -2);
           child.scale.set(1, 1, 1);
-          isMobile() && child.scale.set(0.7, 0.7, 0.7);
+          isMobile && child.scale.set(0.7, 0.7, 0.7);
           child.rotation.set(1.7, 0, 0);
           child.name = "bg" + i;
-          console.log(scene.children);
           if (bgmeshes.length < 3) {
-            console.log(bgmeshes);
             scene.add(child);
             bgmeshes.push(child);
             //child.material.opacity = 0.4;
@@ -372,16 +358,6 @@
 
     document.body.appendChild(renderer.domElement);
 
-    // controls = new OrbitControls(camera, renderer.domElement);
-    // controls.enableDamping = true; // an animation loop is required when damping is enabled
-    // controls.dampingFactor = 0.05;
-    // controls.addEventListener("change", render);
-    // controls.target.set(0, 2, 0);
-    // // to disable zoom
-    // controls.enableZoom = false;
-    // controls.enablePan = false;
-    // controls.update();
-
     let previousMousePosition = {
       x: 0,
       y: 0,
@@ -438,7 +414,7 @@
         y: touch.clientY,
       };
     }
-    if (isMobile()) {
+    if (isMobile) {
       document.addEventListener("touchmove", onTouchMove, { passive: false });
       document.addEventListener("touchstart", onTouchStart);
       document.addEventListener("touchend", onTouchEnd);
@@ -487,7 +463,7 @@
   }
 
   function animate() {
-    if (isMobile() && bgmeshes.length > 2) {
+    if (/* isMobile &&  */ bgmeshes.length > 2) {
       for (let i = 0; i < bgmeshes.length; i++) {
         if (bgmeshes[i].position.x < -7.3) {
           bgmeshes[i].position.x = 5;
@@ -507,7 +483,7 @@
       });
 
       // If rotation speed is very small, stop decelerating
-      if (rotationSpeed < (isMobile() ? 0.0001 : 0.000001)) {
+      if (rotationSpeed < (isMobile ? 0.0001 : 0.000001)) {
         isDecelerating = false;
       }
     }
@@ -519,26 +495,17 @@
 
   animate();
   //2A3739
+  console.log(isMobile);
 </script>
 
 <main>
-  {#if isMobile()}
-    <div class="header">
-      <a href="info">Pasdasasd</a>
-    </div>
-  {:else}
-    <div class="header">
-      <a href="/">HOME</a>
-      <a href="pieces">PIECES</a>
-      <a href="info">INFO</a>
-    </div>
-  {/if}
+  <Header {isMobile} />
 
   <canvas id="bg"></canvas>
   <div class="options">
     <div class="pieceoptions">
       {#each pieces as piece}
-        <Buttons on:click={() => loadGltf(piece)} {currentPiece} ownPiece={piece} isMobile={isMobile()} />
+        <Buttons on:click={() => loadGltf(piece)} {currentPiece} ownPiece={piece} {isMobile} />
       {/each}
     </div>
     <MaterialChanger bind:meshes bind:currentMaterial {whitematerial} {material} />
@@ -557,6 +524,7 @@
     justify-content: center;
     place-items: center;
     flex-direction: column;
+    margin-bottom: 40px;
   }
   .pieceoptions {
     height: 30px;
@@ -564,31 +532,9 @@
     display: flex;
     justify-content: center;
     place-items: center;
-    margin-bottom: 130px;
+    margin-bottom: 60px;
   }
-  .header {
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 50;
-    width: 100vw;
-    height: 30px;
-    gap: 200px;
-    margin-top: 20px;
-    display: flex;
-    justify-content: center;
-    place-items: center;
-    color: #3a3a3a;
-    text-align: center;
-    font-family: "Baloo 2", sans-serif;
-    font-size: 18px;
-    font-weight: 600;
-  }
-  a {
-    font-family: "Baloo 2", sans-serif;
-    text-decoration: none !important;
-    color: #3a3a3a;
-  }
+
   main {
     position: absolute;
     top: 0;
@@ -612,6 +558,7 @@
     }
     .options {
       height: auto;
+      margin-bottom: 0px;
     }
   }
 </style>

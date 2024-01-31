@@ -3,6 +3,8 @@
   import { OrbitControls } from "three/addons/controls/OrbitControls.js";
   import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
   import { GUI } from "dat.gui";
+  import isUserUsingMobile from "./CheckDevice";
+  import Header from "./Header.svelte";
   let camera, scene, renderer, controls;
   let meshes = [];
   let mouseX = 0;
@@ -18,6 +20,8 @@
   init();
   render();
   let bgmesh;
+
+  const isMobile = isUserUsingMobile();
 
   function init() {
     camera = new THREE.PerspectiveCamera(15, window.innerWidth / window.innerHeight, 0.1, 100);
@@ -62,7 +66,7 @@
             color: 0x141414,
           })
         );
-        mesh.position.set(-4, -1.5, 2);
+        mesh.position.set(-4, -0.7, 2);
         mesh.scale.set(1, 1, 1);
         mesh.renderOrder = 5;
         mesh.rotation.set(1.2, 0, 0);
@@ -149,7 +153,6 @@
 
     targetX = (mouseX / 5 - 200) * mouseSpeed;
     targetY = (mouseY / 10 - 50) * mouseSpeed;
-    console.log(mouseX);
     if (meshes.length > 0) {
       meshes.forEach((mesh) => {
         mesh.rotation.x += dampingFactor * (targetY - mesh.rotation.x);
@@ -174,42 +177,49 @@
 </script>
 
 <main>
+  <Header {isMobile} />
   <div>
-    <a href="/">HOME</a>
-    <a href="pieces">PIECES</a>
-    <a href="info">INFO</a>
+    <span>
+      <p>Modelling & UI by Adrienn Kovács</p>
+      <img src="behance.svg" alt="behance" />
+    </span>
+    <span>
+      <p>Programming by me</p>
+      <img src="github.png" alt="github" /></span
+    >
   </div>
+
   <canvas id="bg"></canvas>
 </main>
 
 <style>
   div {
     position: absolute;
-    top: 0;
-    left: 0;
+    bottom: 15%;
+    left: 40%;
     z-index: 50;
-    width: 100vw;
-    height: 30px;
-    gap: 200px;
-    margin-top: 20px;
-    display: flex;
-    justify-content: center;
-    place-items: center;
-    color: #3a3a3a;
-    text-align: center;
-    font-family: "Baloo 2", sans-serif;
-    font-size: 18px;
-    font-weight: 600;
-  }
-  a {
-    font-family: "Baloo 2", sans-serif;
+    font-family: "Fredoka", sans-serif;
     text-decoration: none !important;
     color: #3a3a3a;
+    font-weight: 500;
+    font-size: 18px;
+  }
+  span {
+    display: flex;
+    justify-content: start;
+    place-items: center;
+  }
+  img {
+    margin-left: 10px;
+    height: 20px;
+    width: 20px;
   }
   main {
     position: absolute;
     top: 0;
     left: 0;
+    width: 100vw;
+    height: 100vh;
   }
   canvas {
     position: absolute;

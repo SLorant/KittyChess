@@ -3,6 +3,8 @@
   import { OrbitControls } from "three/addons/controls/OrbitControls.js";
   import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
   import { GUI } from "dat.gui";
+  import Header from "./Header.svelte";
+  import isUserUsingMobile from "./CheckDevice";
   let camera, scene, renderer, controls;
   let meshes = [];
   const meshnames = [];
@@ -16,30 +18,7 @@
 
   let bgmesh;
 
-  const isMobile = () => {
-    // User agent string method
-    let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
-    // Screen resolution method
-    if (!isMobile) {
-      let screenWidth = window.screen.width;
-      let screenHeight = window.screen.height;
-      isMobile = screenWidth < 768 || screenHeight < 768;
-    }
-
-    // Touch events method
-    if (!isMobile) {
-      isMobile = "ontouchstart" in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
-    }
-
-    // CSS media queries method
-    if (!isMobile) {
-      let bodyElement = document.getElementsByTagName("body")[0];
-      isMobile = window.getComputedStyle(bodyElement).getPropertyValue("content").indexOf("mobile") !== -1;
-    }
-
-    return isMobile;
-  };
+  const isMobile = isUserUsingMobile();
   init();
   render();
   function compareMeshes(mesh1, mesh2) {
@@ -82,12 +61,12 @@
       console.log(meshnames.find((mesh) => mesh === model.name));
       if (meshnames.find((mesh) => mesh === model.name) === undefined) {
         const mesh = new THREE.Mesh(model.geometry, isTransparent ? material : model.material);
-        if (isMobile()) mesh.material = material;
+        if (isMobile) mesh.material = material;
         mesh.position.set(...positions[index]);
         if (model.name === "king") {
-          isMobile() ? mesh.scale.set(4, 4, 4) : mesh.scale.set(4.25, 4.25, 4.25);
+          isMobile ? mesh.scale.set(4, 4, 4) : mesh.scale.set(4.25, 4.25, 4.25);
         } else {
-          isMobile() ? mesh.scale.set(3.5, 3.5, 3.5) : mesh.scale.set(3.75, 3.75, 3.75);
+          isMobile ? mesh.scale.set(3.5, 3.5, 3.5) : mesh.scale.set(3.75, 3.75, 3.75);
         }
         mesh.rotation.set(0, 0, 0);
 
@@ -105,9 +84,9 @@
         const mesh = new THREE.Mesh(model.geometry, isTransparent ? material : model.material);
         mesh.position.set(...positions[index]);
         if (model.name === "king_eye") {
-          isMobile() ? mesh.scale.set(4, 4, 4) : mesh.scale.set(4.25, 4.25, 4.25);
+          isMobile ? mesh.scale.set(4, 4, 4) : mesh.scale.set(4.25, 4.25, 4.25);
         } else {
-          isMobile() ? mesh.scale.set(3.5, 3.5, 3.5) : mesh.scale.set(3.75, 3.75, 3.75);
+          isMobile ? mesh.scale.set(3.5, 3.5, 3.5) : mesh.scale.set(3.75, 3.75, 3.75);
         }
         mesh.rotation.set(0, 0, 0);
 
@@ -128,8 +107,8 @@
               color: 0x414141,
             })*/
     const loader2 = new GLTFLoader();
-    console.log(isMobile());
-    const bg = isMobile() ? "bg_phone.glb" : "background.glb";
+    console.log(isMobile);
+    const bg = isMobile ? "bg_phone.glb" : "background.glb";
     loader2.load(`${bg}`, function (gltf) {
       gltf.scene.traverse(function (child) {
         let mesh = new THREE.Mesh(
@@ -138,9 +117,9 @@
             color: 0x141414,
           })
         );
-        isMobile() ? mesh.position.set(0, 0.1, 2) : mesh.position.set(0, -0.1, 2);
+        isMobile ? mesh.position.set(0, 0.1, 2) : mesh.position.set(0, -0.1, 2);
 
-        isMobile() ? mesh.scale.set(0.7, 0.7, 0.7) : mesh.scale.set(1.6, 1.6, 1.6);
+        isMobile ? mesh.scale.set(0.7, 0.7, 0.7) : mesh.scale.set(1.6, 1.6, 1.6);
         mesh.renderOrder = 5;
         mesh.rotation.set(0, 0, 0);
         bgmesh = mesh;
@@ -157,7 +136,7 @@
       [2, 0.8, 0],
     ];
     let materials = [true, false, true, false, false];
-    if (isMobile()) {
+    if (isMobile) {
       pieces = ["knight", "king"];
       positions = [
         [0, 0.8, 3],
@@ -255,8 +234,18 @@
     targetY = mouseY * 0.001;
 
     if (meshes.length > 8) {
-      bgmesh.rotation.x += 0.002 * (targetY - bgmesh.rotation.x);
-      bgmesh.rotation.y += 0.002 * (targetX - bgmesh.rotation.y);
+      //console.log(bgmesh.rotation.y);
+      if (bgmesh.rotation.y < 0.2 && bgmesh.rotation.y > -0.2) {
+        bgmesh.rotation.y += 0.002 * (targetX - bgmesh.rotation.y) * (1 - bgmesh.rotation.y);
+      } else {
+        bgmesh.rotation.y -= 0.002 * (targetX + bgmesh.rotation.y) * (1 - bgmesh.rotation.y);
+      }
+
+      if (bgmesh.rotation.x < 0.2 && bgmesh.rotation.x > -0.2) {
+        bgmesh.rotation.x += 0.002 * (targetY - bgmesh.rotation.x) * (1 - bgmesh.rotation.x);
+      } else {
+        bgmesh.rotation.x -= 0.002 * (targetY + bgmesh.rotation.x) * (1 - bgmesh.rotation.x);
+      }
     }
     renderer.render(scene, camera);
   }
@@ -287,7 +276,7 @@
     else group.position.x += 0.00025 * dir.x * speed;
 
     group.position.y -= 0.001 * dir.y * speed;
-    if (isMobile()) {
+    if (isMobile) {
       if (group.position.x > 0.3 || group.position.x < -0.3) {
         dir.x *= -1;
       }
@@ -338,7 +327,7 @@
 
       meshes[7].rotation.z -= 0.005;
       meshes[8].rotation.z -= 0.005;
-    } else if (isMobile()) {
+    } else if (isMobile) {
       if (meshes.length > 3) {
         if (meshnames[2] !== "rook_1") {
           console.log("AAAAAAAAAAAAAA");
@@ -366,51 +355,16 @@
 
   animate();
   //2A3739
+  //screen.orientation.lock("portrait");
 </script>
 
 <main>
-  {#if isMobile()}
-    <div href="info">
-      <a
-        href="pieces
-      ">Pasdasd</a
-      >
-    </div>
-  {:else}
-    <div>
-      <a href="/">HOME</a>
-      <a href="pieces">PIECES</a>
-      <a href="info">INFO</a>
-    </div>
-  {/if}
+  <Header {isMobile} />
 
   <canvas id="bg"></canvas>
 </main>
 
 <style>
-  div {
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 50;
-    width: 100vw;
-    height: 30px;
-    gap: 200px;
-    margin-top: 20px;
-    display: flex;
-    justify-content: center;
-    place-items: center;
-    color: #3a3a3a;
-    text-align: center;
-    font-family: "Baloo 2", sans-serif;
-    font-size: 18px;
-    font-weight: 600;
-  }
-  a {
-    font-family: "Baloo 2", sans-serif;
-    text-decoration: none !important;
-    color: #3a3a3a;
-  }
   main {
     position: absolute;
     top: 0;
