@@ -3,8 +3,9 @@
   import { OrbitControls } from "three/addons/controls/OrbitControls.js";
   import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
   import { GUI } from "dat.gui";
-  import isUserUsingMobile from "./CheckDevice";
+  import isUserUsingMobile from "./utils/CheckDevice";
   import Header from "./Header.svelte";
+  import AddLights from "./utils/AddLights";
   let camera, scene, renderer, controls;
   let meshes = [];
   let mouseX = 0;
@@ -58,7 +59,7 @@
                 color: 0x414141,
               })*/
     const loader2 = new GLTFLoader();
-    loader2.load(`bg_knight.glb`, function (gltf) {
+    loader2.load(`src/assets/contact.glb`, function (gltf) {
       gltf.scene.traverse(function (child) {
         let mesh = new THREE.Mesh(
           child.geometry,
@@ -68,8 +69,7 @@
         );
         mesh.position.set(-4, -0.7, 2);
         mesh.scale.set(1, 1, 1);
-        mesh.renderOrder = 5;
-        mesh.rotation.set(1.2, 0, 0);
+        mesh.rotation.set(0, 0, 0);
         bgmesh = mesh;
         scene.add(mesh);
       });
@@ -95,26 +95,8 @@
       render();
     });
 
-    const pointLight = new THREE.DirectionalLight(0xffffff);
-    pointLight.position.set(5, 5, 5);
-    pointLight.intensity = 2;
-
-    const pointLight3 = new THREE.DirectionalLight(0xffffff);
-    pointLight3.position.set(0, 2, 10);
-    pointLight3.intensity = 1;
-
-    const pointLight2 = new THREE.DirectionalLight(0xacf5ff);
-    pointLight2.position.set(-5, 3, 5);
-    pointLight2.intensity = 3;
-
-    const pointLight4 = new THREE.DirectionalLight(0xffffff);
-    pointLight4.position.set(0, -3, 10);
-
-    const pointLight5 = new THREE.PointLight(0xffffff);
-    pointLight5.position.set(0, 0, -1);
-    pointLight5.intensity = 1;
-
-    scene.add(pointLight, pointLight2, pointLight3, pointLight4, pointLight5);
+    const lights = AddLights(false, true);
+    scene.add(...lights);
 
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(window.devicePixelRatio);

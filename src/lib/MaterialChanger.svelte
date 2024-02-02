@@ -6,46 +6,33 @@
   export let material;
   export let currentMaterial;
   export let meshes;
-  function changeMaterial() {
-    currentMaterial = whitematerial;
-    console.log(meshes[0]);
-    if (meshes[0].name === "pawn_eye") meshes[1].material = whitematerial;
-    else meshes[0].material = whitematerial;
+  function changeMaterial(isWhite) {
+    currentMaterial = isWhite ? whitematerial : material;
 
+    if (meshes[0].name === "pawn_eye") meshes[1].material = currentMaterial;
+    else meshes[0].material = currentMaterial;
     if (meshes.length > 2) {
-      meshes[0].material = whitematerial;
-      meshes[1].material = whitematerial;
-      if (meshes.length > 3) meshes[2].material = whitematerial;
+      meshes[0].material = currentMaterial;
+      meshes[1].material = currentMaterial;
+      if (meshes.length > 3) meshes[2].material = currentMaterial;
     }
   }
-
-  function changeMaterialToBlue() {
-    currentMaterial = material;
-    if (meshes[0].name === "pawn_eye") meshes[1].material = material;
-    else meshes[0].material = material;
-    if (meshes.length > 2) {
-      meshes[0].material = material;
-      meshes[1].material = material;
-      if (meshes.length > 3) meshes[2].material = material;
-    }
-  }
-  console.log(currentMaterial);
 </script>
 
 <div class="container">
-  <White on:click={changeMaterial} />
-  <Blue on:click={changeMaterialToBlue} />
+  <White on:click={() => changeMaterial(true)} />
+  <Blue on:click={() => changeMaterial(false)} />
   {#if currentMaterial === whitematerial}
     <div class="x white">
-      <X on:click={changeMaterialToBlue} />
+      <X on:click={() => changeMaterial(false)} />
     </div>
   {:else if currentMaterial === material}
     <div class="x blue">
-      <X on:click={changeMaterial} />
+      <X on:click={() => changeMaterial(true)} />
     </div>
   {:else}
     <div class="x white">
-      <X on:click={changeMaterialToBlue} />
+      <X on:click={() => changeMaterial(true)} />
     </div>
   {/if}
 </div>
@@ -72,7 +59,7 @@
   }
   @media screen and (max-width: 600px) {
     .container {
-      margin-bottom: 40px;
+      margin-bottom: 60px;
     }
   }
 </style>

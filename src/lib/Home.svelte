@@ -4,7 +4,8 @@
   import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
   import { GUI } from "dat.gui";
   import Header from "./Header.svelte";
-  import isUserUsingMobile from "./CheckDevice";
+  import isUserUsingMobile from "./utils/CheckDevice";
+  import AddLights from "./utils/AddLights";
   let camera, scene, renderer, controls;
   let meshes = [];
   const meshnames = [];
@@ -174,26 +175,8 @@
       });
     }
 
-    const pointLight = new THREE.DirectionalLight(0xffffff);
-    pointLight.position.set(5, 5, 5);
-    pointLight.intensity = 3;
-
-    const pointLight3 = new THREE.DirectionalLight(0xffffff);
-    pointLight3.position.set(0, 2, 10);
-    pointLight3.intensity = 1;
-
-    const pointLight2 = new THREE.DirectionalLight(0x85f0ff);
-    pointLight2.position.set(-5, 3, 5);
-    pointLight2.intensity = 5;
-
-    const pointLight4 = new THREE.DirectionalLight(0xffffff);
-    pointLight4.position.set(0, -3, 10);
-
-    const pointLight5 = new THREE.PointLight(0xffffff);
-    pointLight5.position.set(0, 0, -1);
-    pointLight5.intensity = 30;
-
-    scene.add(pointLight, pointLight2, pointLight3, pointLight4, pointLight5);
+    const lights = AddLights(true, false);
+    scene.add(...lights);
 
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(window.devicePixelRatio);

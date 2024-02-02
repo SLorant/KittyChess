@@ -1,56 +1,49 @@
 <script>
   import * as THREE from "three";
-  import { OrbitControls } from "three/addons/controls/OrbitControls.js";
   import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-  import { GUI } from "dat.gui";
   import Buttons from "./Buttons.svelte";
   import MaterialChanger from "./MaterialChanger.svelte";
-  import * as TWEEN from "@tweenjs/tween.js";
-  import { gsap, Power1 } from "gsap";
-  import { TweenLite } from "gsap/gsap-core";
-  import isUserUsingMobile from "./CheckDevice";
+  import isUserUsingMobile from "./utils/CheckDevice";
   import Header from "./Header.svelte";
+  import AddLights from "./utils/AddLights";
 
-  let camera, scene, renderer, controls;
+  let camera, scene, renderer;
   let meshes = [];
   let meshnames = [];
   let whitematerial;
   let material;
   let currentPiece;
-  let bgCamera, bgScene;
   let currentMaterial;
   let bgmeshes = [];
   const pieces = ["king", "queen", "bishop", "knight", "rook", "pawn"];
-  const materials = [true, false, true, false, false, false, false];
-  const positions = [
-    [0, 2.1, 0],
-    [-2, -1, 4],
-    [1, -0.2, 4],
+  let position = [0, 2.1, 0];
 
-    [2, 0.8, 0],
-  ];
   let rotationSpeed = 0.01;
   let isDragging = false;
   let isDecelerating = false;
   let decelerationDirection = { x: 0, y: 0 };
-  let initialMouseDownPosition = { x: 0, y: 0 };
+  let initialPosition = { x: 0, y: 0 };
 
   const isMobile = isUserUsingMobile();
+  const bgcount = isMobile ? 1 : 3;
 
-  function addPieceToWorldFromModel(model, index, isEye, first) {
+  if (isMobile) position = [0, 2.3, 0];
+
+  function addPieceToWorldFromModel(model, isEye, first) {
     if (meshes.length < 5 && meshnames.find((mesh) => mesh === model.name) === undefined) {
       if (model.name === "pawn_eye") isEye = true;
       if (first && model.name === "king") isEye = true;
       const isTransparent = !isEye;
       const mesh = new THREE.Mesh(model.geometry, isTransparent ? currentMaterial : model.material);
-      mesh.position.set(...positions[index]);
+      mesh.position.set(...position);
 
+      //Mesh sizes are varied, device and piece matters too
       if (model.name === "pawn_eye" || model.name == "pawn") {
-        mesh.scale.set(4, 4, 4);
+        isMobile ? mesh.scale.set(3.2, 3.2, 3.2) : mesh.scale.set(4, 4, 4);
       } else if (model.name === "king" || model.name == "king_eye") {
-        mesh.scale.set(3.1, 3.1, 3.1);
-      } else mesh.scale.set(3.3, 3.3, 3.3);
-      if (isMobile) mesh.scale.set(2.2, 2.2, 2.2);
+        isMobile ? mesh.scale.set(2.5, 2.5, 2.5) : mesh.scale.set(3.1, 3.1, 3.1);
+      } else isMobile ? mesh.scale.set(2.7, 2.7, 2.7) : mesh.scale.set(3.3, 3.3, 3.3);
+
       mesh.rotation.set(0, 0, 0);
       mesh.name = model.name;
 
@@ -60,124 +53,83 @@
         scene.add(mesh);
       }
     }
-    // } else if (model.name === "pawn") {
-    //   const mesh = new THREE.Mesh(model.geometry, isTransparent ? currentMaterial : model.material);
-    //   mesh.position.set(...positions[index]);
-    //   mesh.scale.set(3.75, 3.75, 3.75);
-    //   mesh.rotation.set(0, 0, 0);
-    //   mesh.name = model.name;
-    //   meshes.push(mesh);
-    //   meshnames.push(model.name);
-
-    //   scene.add(mesh);
-    // }
   }
+
+  const loadBgModel = (piece) => {
+    for (let i = 0; i < bgcount; i++) {
+      const loader = new GLTFLoader();
+      loader.load(`bg_${piece}.glb`, function (gltf) {
+        let child = gltf.scene.children[0];
+        child.material = new THREE.MeshStandardMaterial({
+          color: 0x141414,
+          // transparent: true,
+        });
+        isMobile ? child.position.set(-0.6, 2.2, -2) : child.position.set(-5.5 + i * 4.1, 1.8, -2);
+        isMobile ? child.scale.set(0.7, 0.7, 0.7) : child.scale.set(1, 1, 1);
+        child.rotation.set(1.7, 0, 0);
+        child.name = "bg" + i;
+        if (bgmeshes.length < bgcount) {
+          scene.add(child);
+          bgmeshes.push(child);
+          //child.material.opacity = 0.4;
+          //gsap.to(child.material, { duration: 0.3, opacity: 1, ease: Power1.easeInOut });
+        }
+      });
+    }
+  };
 
   const loadGltf = (piece, first) => {
     let rotationBefore;
-    let positionBefore;
 
     if (meshes.length > 1) {
-      let selectedObject = scene.getObjectByName(meshes[0].name);
+      //let piecePart = scene.getObjectByName(meshes[0].name);
+      const pieceParts = meshes.slice(0, 4).map((mesh) => scene.getObjectByName(mesh.name));
+      const isBishop = piece === "bishop" && pieceParts[0].name === "Cube016";
+      const isQueen = piece === "queen" && pieceParts[0].name === "Cylinder003";
 
-      const isBishop = piece === "bishop" && selectedObject.name === "Cube016";
-      const isQueen = piece === "queen" && selectedObject.name === "Cylinder003";
+      if (!pieceParts[0].name.includes(piece) && !isBishop && !isQueen) {
+        let initialRotation = pieceParts[0].rotation.clone();
+        let targetRotation = new THREE.Euler(Math.PI * 1.5, 0, 0);
+        let startTime = Date.now();
 
-      if (!selectedObject.name.includes(piece) && !isBishop && !isQueen) {
-        let selectedObject2 = scene.getObjectByName(meshes[1].name);
-        let selectedObject3;
-        let selectedObject4;
-        if (meshes.length > 2) {
-          selectedObject3 = scene.getObjectByName(meshes[2].name);
-          if (meshes.length > 3) selectedObject4 = scene.getObjectByName(meshes[3].name);
-          //scene.remove(selectedObject3);
-        }
+        function rotateAndRemove() {
+          let currentTime = Date.now();
+          let elapsed = (currentTime - startTime) / 1000; // Convert milliseconds to seconds
 
-        if (selectedObject !== undefined) {
-          // bgmeshes[0].material.transparent = true;
+          if (elapsed < 1) {
+            // Rotate for 1 second
+            let t = elapsed; /* / 1; */
+            pieceParts.forEach((model) => {
+              model.rotation.x = THREE.MathUtils.lerp(initialRotation.x, targetRotation.x, t);
+            });
 
-          // console.log(bgmeshes[0].opacity);
-
-          let initialRotation = selectedObject.rotation.clone();
-          let targetRotation = new THREE.Euler(Math.PI * 1.5, 0, 0); // You can adjust the target rotation
-          let startTime = Date.now();
-
-          function rotateAndRemove() {
-            let currentTime = Date.now();
-            let elapsed = (currentTime - startTime) / 1000; // Convert milliseconds to seconds
-
-            if (elapsed < 1) {
-              // Rotate for 1 second
-              let t = elapsed / 1; // 1 is the duration of rotation
-              selectedObject.rotation.x = THREE.MathUtils.lerp(initialRotation.x, targetRotation.x, t);
-              selectedObject2.rotation.x = THREE.MathUtils.lerp(initialRotation.x, targetRotation.x, t);
-              //selectedObject.rotation.y = THREE.MathUtils.lerp(initialRotation.y, targetRotation.y, t);
-              if (selectedObject3 !== undefined) {
-                selectedObject3.rotation.x = THREE.MathUtils.lerp(initialRotation.x, targetRotation.x, t);
-              }
-              if (selectedObject4 !== undefined) {
-                selectedObject4.rotation.x = THREE.MathUtils.lerp(initialRotation.x, targetRotation.x, t);
-              }
-              selectedObject.rotation.z = THREE.MathUtils.lerp(initialRotation.z, targetRotation.z, t);
-              requestAnimationFrame(rotateAndRemove);
-            } else if (meshes.length < 5) {
-              if (bgmeshes.length > 2) {
-                scene.remove(bgmeshes[0]);
-                scene.remove(bgmeshes[1]);
-                scene.remove(bgmeshes[2]);
-                bgmeshes = [];
-              }
-
-              for (let i = 0; i < 3; i++) {
-                const loader2 = new GLTFLoader();
-                loader2.load(`bg_${piece}.glb`, function (gltf) {
-                  let child = gltf.scene.children[0]; // Assuming you have a single child in the GLTF scene
-                  child.material = new THREE.MeshStandardMaterial({
-                    color: 0x141414,
-                    //transparent: true,
-                  });
-                  child.position.set(-5.5 + i * 4.1, 1.8, -2);
-                  child.scale.set(1, 1, 1);
-                  isMobile && child.scale.set(0.7, 0.7, 0.7);
-                  child.rotation.set(1.7, 0, 0);
-                  child.name = "bg" + i;
-                  if (bgmeshes.length < 3) {
-                    scene.add(child);
-                    bgmeshes.push(child);
-                    //child.material.opacity = 0;
-                    const fadeInDuration = 1; // Adjust the duration as needed
-                    //gsap.to(child.material, { duration: 0.3, opacity: 1, ease: Power1.easeInOut });
-                  }
-                });
-              }
-              rotationBefore = selectedObject.rotation;
-              positionBefore = selectedObject.position;
-              // Rotation complete, now remove the object
-              scene.remove(selectedObject);
-              scene.remove(selectedObject2);
-              if (selectedObject3 !== undefined) {
-                scene.remove(selectedObject3);
-              }
-              if (selectedObject4 !== undefined) {
-                scene.remove(selectedObject4);
-              }
-
-              if (piece === "queen") {
-                meshes = meshes.filter((mesh) => mesh.name.includes("Cylinder003") || mesh.name.includes(piece));
-                meshnames = meshnames.filter((mesh) => mesh.includes("Cylinder003") || mesh.includes(piece));
-              } else if (piece === "bishop") {
-                meshes = meshes.filter((mesh) => mesh.name.includes("Cube") || mesh.name.includes(piece));
-                meshnames = meshnames.filter((mesh) => mesh.includes("Cube") || mesh.includes(piece));
-              } else {
-                meshes = meshes.filter((mesh) => mesh.name.includes(piece));
-                meshnames = meshnames.filter((mesh) => mesh.includes(piece));
-              }
-              loadNewModel(piece);
+            requestAnimationFrame(rotateAndRemove);
+          } else if (meshes.length < 5) {
+            if (bgmeshes.length > bgcount - 1) {
+              scene.remove(...bgmeshes);
+              bgmeshes = [];
             }
-          }
 
-          rotateAndRemove();
+            loadBgModel(piece);
+            rotationBefore = pieceParts[0].rotation;
+            // Rotation complete, now remove the object
+            pieceParts.forEach((model) => scene.remove(model));
+
+            if (piece === "queen") {
+              meshes = meshes.filter((mesh) => mesh.name.includes("Cylinder003") || mesh.name.includes(piece));
+              meshnames = meshnames.filter((mesh) => mesh.includes("Cylinder003") || mesh.includes(piece));
+            } else if (piece === "bishop") {
+              meshes = meshes.filter((mesh) => mesh.name.includes("Cube") || mesh.name.includes(piece));
+              meshnames = meshnames.filter((mesh) => mesh.includes("Cube") || mesh.includes(piece));
+            } else {
+              meshes = meshes.filter((mesh) => mesh.name.includes(piece));
+              meshnames = meshnames.filter((mesh) => mesh.includes(piece));
+            }
+            loadNewModel(piece);
+          }
         }
+
+        rotateAndRemove();
       }
     }
 
@@ -187,87 +139,55 @@
       loader.load(`${piece}.glb`, function (gltf) {
         gltf.scene.traverse(function (child) {
           if (child.name == `${piece}_eye`) {
-            addPieceToWorldFromModel(child, 0, true);
+            addPieceToWorldFromModel(child, true);
           } else if (piece == "king" || piece == "knight" || piece === "pawn") {
             let ogmodel = gltf.scene.children.find((mesh) => mesh.name === piece);
             whitematerial = ogmodel.material;
-
             if (first) currentMaterial = whitematerial;
-            addPieceToWorldFromModel(ogmodel, 0, false, first);
+            addPieceToWorldFromModel(ogmodel, false, first);
           } else {
             let ogmodel = gltf.scene.children.find((mesh) => mesh.name === piece);
             let model = ogmodel.children[0];
-            addPieceToWorldFromModel(model, 0, false, first);
+            addPieceToWorldFromModel(model, false, first);
 
             if (piece === "rook" || piece === "bishop") {
               let model2 = ogmodel.children[1];
 
-              addPieceToWorldFromModel(model2, 0, false, first);
+              addPieceToWorldFromModel(model2, false, first);
             }
             if (piece === "queen") {
               let model2 = ogmodel.children[1];
               whitematerial = model2.material;
               let model3 = ogmodel.children[2];
-              addPieceToWorldFromModel(model2, 0, false);
-              addPieceToWorldFromModel(model3, 0, false);
+              addPieceToWorldFromModel(model2, false);
+              addPieceToWorldFromModel(model3, false);
             }
           }
         });
 
         // Set the initial rotation of the new model to be the same as the previous model
-        let newModel = meshes[0];
-        //  newModel.position = positionBefore;
-        let newModel2;
-
-        if (meshes.length > 1) {
-          newModel2 = meshes[1];
-        }
-        let newModel3;
-        let newModel4;
-        if (meshes.length > 2) {
-          newModel3 = meshes[2];
-          if (meshes.length > 3) newModel4 = meshes[3];
-        }
+        let newPieceParts = meshes.slice(0, 4);
         if (rotationBefore) {
-          newModel.rotation.x = rotationBefore.x;
-          newModel2.rotation.x = rotationBefore.x;
-          if (meshes.length > 2) {
-            newModel3.rotation.x = rotationBefore.x;
-            if (meshes.length > 3) newModel4.rotation.x = rotationBefore.x;
-          }
+          newPieceParts.forEach((model) => (model.rotation.x = rotationBefore.x));
         }
 
-        let initialRotation = newModel.rotation.clone();
+        let initialRotation = newPieceParts[0].rotation.clone();
         let targetRotation = new THREE.Euler(0, 0, 0); // Target rotation is 0 position
         let startTime = Date.now();
 
-        function easeInOutCubic(t) {
-          return t < 0.5 ? 4 * t ** 3 : 1 - Math.pow(-2 * t + 2, 3) / 2;
-        }
         function rotateNewModel() {
           let currentTime = Date.now();
-
           let elapsed = (currentTime - startTime) / 1000; // Convert milliseconds to seconds
 
           if (elapsed < 1) {
-            // Rotate for 1 second
-            let t = elapsed / 1;
-            newModel.rotation.x = THREE.MathUtils.lerp(initialRotation.x, targetRotation.x, t);
-            newModel2.rotation.x = THREE.MathUtils.lerp(initialRotation.x, targetRotation.x, t);
-            if (meshes.length > 2) {
-              newModel3.rotation.x = THREE.MathUtils.lerp(initialRotation.x, targetRotation.x, t);
-              if (meshes.length > 3)
-                newModel4.rotation.x = THREE.MathUtils.lerp(initialRotation.x, targetRotation.x, t);
-            }
-            render();
+            let t = elapsed; /* / 1; */
+            newPieceParts.forEach((model) => {
+              model.rotation.x = THREE.MathUtils.lerp(initialRotation.x, targetRotation.x, t);
+            });
             requestAnimationFrame(rotateNewModel);
-          } else {
-            // Rotation complete
-            render();
           }
         }
-
-        rotateNewModel();
+        if (!first) rotateNewModel();
       });
     };
 
@@ -276,32 +196,8 @@
     }
 
     if (first) {
-      for (let i = 0; i < 3; i++) {
-        const loader2 = new GLTFLoader();
-        loader2.load(`bg_${piece}.glb`, function (gltf) {
-          let child = gltf.scene.children[0]; // Assuming you have a single child in the GLTF scene
-          child.material = new THREE.MeshStandardMaterial({
-            color: 0x141414,
-            // transparent: true,
-          });
-          child.renderorder = -5;
-          child.position.set(-5.5 + i * 4.1, 1.8, -2);
-          child.scale.set(1, 1, 1);
-          isMobile && child.scale.set(0.7, 0.7, 0.7);
-          child.rotation.set(1.7, 0, 0);
-          child.name = "bg" + i;
-          if (bgmeshes.length < 3) {
-            scene.add(child);
-            bgmeshes.push(child);
-            //child.material.opacity = 0.4;
-            const fadeInDuration = 1; // Adjust the duration as needed
-            //gsap.to(child.material, { duration: 0.3, opacity: 1, ease: Power1.easeInOut });
-          }
-        });
-      }
+      loadBgModel(piece);
     }
-    //let selectedObject = scene.getObjectByName(meshes[0].name);
-    //gmeshes = [];
   };
 
   init();
@@ -311,16 +207,12 @@
     camera.position.set(0, 2, 10.5);
     camera.rotation.set(0, 0, 0);
     scene = new THREE.Scene();
-
     scene.background = new THREE.Color(0xe7e7e7);
-    // 0xe7e7e7
-    //
 
     material = new THREE.MeshPhysicalMaterial({
       color: 0x8bf7ff,
       transmission: 1,
       transparent: true,
-
       thickness: 0.5,
       roughness: 0.32,
       envMapIntensity: 0,
@@ -330,121 +222,72 @@
 
     loadGltf(pieces[0], true);
 
-    const pointLight = new THREE.DirectionalLight(0xffffff);
-    pointLight.position.set(5, 5, 5);
-    pointLight.intensity = 3;
-
-    const pointLight3 = new THREE.DirectionalLight(0xffffff);
-    pointLight3.position.set(0, 2, 10);
-    pointLight3.intensity = 1;
-
-    const pointLight2 = new THREE.DirectionalLight(0xacf5ff);
-    pointLight2.position.set(-5, 3, 5);
-    pointLight2.intensity = 3;
-
-    const pointLight4 = new THREE.DirectionalLight(0xffffff);
-    pointLight4.position.set(0, -3, 10);
-
-    const pointLight5 = new THREE.PointLight(0xffffff);
-    pointLight5.position.set(0, 0, -1);
-    pointLight5.intensity = 1;
-
-    scene.add(pointLight, pointLight2, pointLight3, pointLight4, pointLight5);
+    const lights = AddLights(false, false);
+    scene.add(...lights);
 
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
-    //renderer.sortObjects = false;
 
     document.body.appendChild(renderer.domElement);
 
-    let previousMousePosition = {
+    let previousPosition = {
       x: 0,
       y: 0,
     };
 
-    function onMouseMove(event) {
+    function onMouseMove(event, isTouch) {
+      const position = isTouch ? event.touches[0] : event;
       const deltaMove = {
-        x: event.clientX - previousMousePosition.x,
-        y: event.clientY - previousMousePosition.y,
+        x: position.clientX - (isTouch ? initialPosition.x : previousPosition.x),
+        y: position.clientY - (isTouch ? initialPosition.y : previousPosition.y),
       };
-
       if (isDragging) {
         rotationSpeed = 0.005; // Decelerate slightly while dragging
-
         meshes.forEach((mesh) => {
-          mesh.rotation.x += deltaMove.y * rotationSpeed;
-          mesh.rotation.y += deltaMove.x * rotationSpeed;
+          mesh.rotation.x += (isTouch ? deltaMove.y / 50 : deltaMove.y) * rotationSpeed;
+          mesh.rotation.y += (isTouch ? deltaMove.x / 50 : deltaMove.x) * rotationSpeed;
         });
       }
-
-      previousMousePosition = {
-        x: event.clientX,
-        y: event.clientY,
+      previousPosition = {
+        x: position.clientX,
+        y: position.clientY,
       };
     }
 
-    function onTouchMove(event) {
-      const touch = event.touches[0];
-
-      const deltaMove = {
-        x: touch.clientX - previousMousePosition.x,
-        y: touch.clientY - previousMousePosition.y,
-      };
-
-      if (isDragging) {
-        rotationSpeed = 0.005;
-        meshes.forEach((mesh) => {
-          mesh.rotation.x += deltaMove.y * rotationSpeed;
-          mesh.rotation.y += deltaMove.x * rotationSpeed;
-        });
-      }
-
-      previousMousePosition = {
-        x: touch.clientX,
-        y: touch.clientY,
-      };
-    }
-    function onTouchStart(event) {
-      const touch = event.touches[0];
+    function onStart(event, isTouch) {
+      const position = isTouch ? event.touches[0] : event;
 
       isDragging = true;
-      initialMouseDownPosition = {
-        x: touch.clientX,
-        y: touch.clientY,
+      initialPosition = {
+        x: position.clientX,
+        y: position.clientY,
       };
-    }
-    if (isMobile) {
-      document.addEventListener("touchmove", onTouchMove, { passive: false });
-      document.addEventListener("touchstart", onTouchStart);
-      document.addEventListener("touchend", onTouchEnd);
-    } else {
-      document.addEventListener("mousemove", onMouseMove);
-      document.addEventListener("mousedown", () => {
-        isDragging = true;
-        initialMouseDownPosition = {
-          x: event.clientX,
-          y: event.clientY,
+      if (isTouch) {
+        previousPosition = {
+          x: position.clientX,
+          y: position.clientY,
         };
-      });
-
-      document.addEventListener("mouseup", () => {
-        isDragging = false;
-        isDecelerating = true;
-        decelerationDirection = {
-          x: previousMousePosition.x - initialMouseDownPosition.x,
-          y: previousMousePosition.y - initialMouseDownPosition.y,
-        };
-      });
+      }
     }
 
-    function onTouchEnd() {
+    function onEnd() {
       isDragging = false;
       isDecelerating = true;
       decelerationDirection = {
-        x: previousMousePosition.x - initialMouseDownPosition.x,
-        y: previousMousePosition.y - initialMouseDownPosition.y,
+        x: previousPosition.x - initialPosition.x,
+        y: previousPosition.y - initialPosition.y,
       };
+    }
+
+    if (isMobile) {
+      document.addEventListener("touchmove", (event) => onMouseMove(event, true)), { passive: false };
+      document.addEventListener("touchstart", (event) => onStart(event, true));
+      document.addEventListener("touchend", onEnd);
+    } else {
+      document.addEventListener("mousemove", (event) => onMouseMove(event, false));
+      document.addEventListener("mousedown", (event) => onStart(event, false));
+      document.addEventListener("mouseup", onEnd);
     }
 
     window.addEventListener("resize", onWindowResize);
@@ -463,23 +306,20 @@
   }
 
   function animate() {
-    if (/* isMobile &&  */ bgmeshes.length > 2) {
+    if (bgmeshes.length > bgcount - 1) {
       for (let i = 0; i < bgmeshes.length; i++) {
-        if (bgmeshes[i].position.x < -7.3) {
-          bgmeshes[i].position.x = 5;
+        if (bgmeshes[i].position.x < (isMobile ? -3.4 : -7.3)) {
+          bgmeshes[i].position.x = isMobile ? 0.8 : 5;
         } else {
           bgmeshes[i].position.x -= 0.005;
         }
       }
     }
-    //controls.update();
     if (!isDragging && isDecelerating) {
-      // Gradually decrease rotation speed when not dragging
       rotationSpeed *= 1 - 0.02;
-
       meshes.forEach((mesh) => {
-        mesh.rotation.x += decelerationDirection.y * rotationSpeed * 0.05;
-        mesh.rotation.y += decelerationDirection.x * rotationSpeed * 0.05;
+        mesh.rotation.x += decelerationDirection.y * rotationSpeed * (isMobile ? 0.02 : 0.05);
+        mesh.rotation.y += decelerationDirection.x * rotationSpeed * (isMobile ? 0.02 : 0.05);
       });
 
       // If rotation speed is very small, stop decelerating
@@ -487,20 +327,15 @@
         isDecelerating = false;
       }
     }
-
     renderer.render(scene, camera);
-
     requestAnimationFrame(animate);
   }
 
   animate();
-  //2A3739
-  console.log(isMobile);
 </script>
 
 <main>
   <Header {isMobile} />
-
   <canvas id="bg"></canvas>
   <div class="options">
     <div class="pieceoptions">
@@ -553,12 +388,13 @@
     .pieceoptions {
       display: grid;
       grid-template-columns: auto auto auto;
-      margin-bottom: 200px;
+      margin-bottom: 40px;
+      height: auto;
       gap: 20px;
     }
     .options {
       height: auto;
-      margin-bottom: 0px;
+      margin-bottom: 20px;
     }
   }
 </style>

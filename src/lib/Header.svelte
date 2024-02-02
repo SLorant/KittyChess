@@ -58,7 +58,7 @@
   <div class="header">
     <a href="/">HOME</a>
     <a href="pieces">PIECES</a>
-    <a href="info">CONTACT</a>
+    <a href="contact">CONTACT</a>
   </div>
 {/if}
 
