@@ -10,7 +10,7 @@
   let meshes = [];
   let mouseX = 0;
   let mouseY = 0;
-  const mouseSpeed = 0.005; // Adjust this value to control the speed of the head movement
+  const mouseSpeed = 0.005;
   const dampingFactor = 0.1;
   const meshnames = [];
 
@@ -79,7 +79,7 @@
     const positions = [[0.8, -0.9, 11]];
 
     const loader = new GLTFLoader();
-    loader.load(`bishop.glb`, function (gltf) {
+    loader.load(`src/assets/bishop.glb`, function (gltf) {
       gltf.scene.traverse(function (child) {
         if (child.name == `bishop_eye`) {
           addPieceToWorldFromModel(child);
@@ -162,12 +162,14 @@
   <Header {isMobile} />
   <div>
     <span>
-      <p>Modelling & UI by Adrienn Kovács</p>
-      <img src="behance.svg" alt="behance" />
+      <p>Modelling & UI by&nbsp;</p>
+      <p class="bold">Adrienn Kovács</p>
+      <a href="https://www.behance.net/adriennkovcs2" target="_blank"><img src="behance.svg" alt="behance" /></a>
     </span>
     <span>
-      <p>Programming by me</p>
-      <img src="github.png" alt="github" /></span
+      <p>Developed by&nbsp;</p>
+      <p class="bold">Lóránt Sutus</p>
+      <a href="https://github.com/SLorant" target="_blank"><img src="github.png" alt="github" /></a></span
     >
   </div>
 
@@ -177,24 +179,31 @@
 <style>
   div {
     position: absolute;
-    bottom: 15%;
-    left: 40%;
+    bottom: 17%;
+    left: 30%;
     z-index: 50;
     font-family: "Fredoka", sans-serif;
     text-decoration: none !important;
     color: #3a3a3a;
-    font-weight: 500;
+    font-weight: 400;
     font-size: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .bold {
+    font-weight: 500;
   }
   span {
     display: flex;
     justify-content: start;
     place-items: center;
+    height: 30px;
   }
   img {
     margin-left: 10px;
-    height: 20px;
-    width: 20px;
+    height: 30px;
+    width: 30px;
   }
   main {
     position: absolute;

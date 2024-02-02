@@ -11,16 +11,6 @@
     menuOpened = !menuOpened;
   };
 
-  /*   const closeMenuOnClickOutside = (event) => {
-    const header = document.querySelector(".header");
-    const menuButton = document.querySelector(".menu-button");
-    console.log(menuButton);
-    if (menuOpened && header && !header.contains(event.target) && !menuButton.contains(event.target)) {
-      menuOpened = false;
-    }
-  };
-
-  document.body.addEventListener("click", closeMenuOnClickOutside); */
   onMount(() => {
     headerTransition = fly;
   });
@@ -40,7 +30,7 @@
         <a href="pieces">PIECES</a>
       </div>
       <div class="link">
-        <a href="info">CONTACT</a>
+        <a href="contact">CONTACT</a>
       </div>
 
       <div><Close on:click={openMenu} /></div>
@@ -94,11 +84,11 @@
   }
   @media screen and (max-width: 600px) {
     .header2 {
-      height: 180px;
+      height: 168px;
       backdrop-filter: blur(20px);
       box-shadow: 0px 15px 15px rgba(20, 20, 20, 0.3);
       background: rgba(231, 231, 231, 0.3);
-      gap: 14px;
+      gap: 12px;
       flex-direction: column;
     }
   }

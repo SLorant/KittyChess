@@ -58,7 +58,7 @@
   const loadBgModel = (piece) => {
     for (let i = 0; i < bgcount; i++) {
       const loader = new GLTFLoader();
-      loader.load(`bg_${piece}.glb`, function (gltf) {
+      loader.load(`src/assets/bg_${piece}.glb`, function (gltf) {
         let child = gltf.scene.children[0];
         child.material = new THREE.MeshStandardMaterial({
           color: 0x141414,
@@ -136,7 +136,7 @@
     const loadNewModel = (piece) => {
       currentPiece = piece;
       const loader = new GLTFLoader();
-      loader.load(`${piece}.glb`, function (gltf) {
+      loader.load(`src/assets/${piece}.glb`, function (gltf) {
         gltf.scene.traverse(function (child) {
           if (child.name == `${piece}_eye`) {
             addPieceToWorldFromModel(child, true);

@@ -6,17 +6,14 @@
   export let ownPiece;
   let PieceComponent;
   let WhitePieceComponent;
-  console.log(isMobile);
-  // Function to dynamically import the piece component
   const importPiece = async () => {
     try {
-      // Convert the piece name to PascalCase (e.g., "pawn" to "Pawn")
+      // Convert the piece name to PascalCase ("pawn" to "Pawn")
       const componentName = ownPiece.charAt(0).toUpperCase() + ownPiece.slice(1);
 
       // Import the corresponding component dynamically
       const module = await import(`../assets/Icons/${componentName}.svelte`);
       const whitemodule = await import(`../assets/Icons/${componentName}White.svelte`);
-      console.log(module);
       PieceComponent = module.default || module;
       WhitePieceComponent = whitemodule.default || whitemodule;
     } catch (error) {
@@ -24,7 +21,6 @@
     }
   };
 
-  // Call the importPiece function on component mount
   onMount(importPiece);
 </script>
 
