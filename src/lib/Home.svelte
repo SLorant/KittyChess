@@ -7,6 +7,9 @@
   import AddLights from "./utils/AddLights";
   import SvelteSeo from "svelte-seo";
 
+  let loading = true;
+
+  let loadedModels = 0;
   let camera, scene, renderer, controls;
   let meshes = [];
   const meshnames = [];
@@ -69,6 +72,7 @@
         meshes.push(mesh);
         meshnames.push(model.name);
         scene.add(mesh);
+        loadedModels++;
       }
     }
 
@@ -135,6 +139,10 @@
           }
         });
       });
+
+      if (loadedModels === pieces.length) {
+        loading = false;
+      }
     }
 
     const lights = AddLights(true, false);
@@ -297,10 +305,31 @@
 <SvelteSeo title="KITTY CHESS" description="Simple description about a page" />
 <main>
   <Header {isMobile} />
-  <canvas id="bg"></canvas>
+
+  {#if loading}
+    <div class="loading-screen">
+      <p>Loading...</p>
+    </div>
+  {:else}
+    <main>
+      <canvas id="bg"></canvas>
+    </main>
+  {/if}
 </main>
 
 <style>
+  .loading-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+  }
   main {
     position: absolute;
     top: 0;
