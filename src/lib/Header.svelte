@@ -77,6 +77,12 @@
     text-decoration: none !important;
     color: #3a3a3a;
     font-weight: 500;
+    -webkit-tap-highlight-color: transparent;
+    transition: opacity 0.1s;
+    opacity: 1;
+  }
+  a:hover {
+    opacity: 0.6;
   }
   .first {
     margin-top: 40px;

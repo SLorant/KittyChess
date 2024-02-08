@@ -1,5 +1,4 @@
 <script>
-  // Dynamically import the component based on ownPiece value
   import { onMount } from "svelte";
   export let isMobile;
   export let currentPiece;
@@ -42,5 +41,9 @@
   }
   button:hover {
     background: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  button:focus {
+    outline: none;
   }
 </style>

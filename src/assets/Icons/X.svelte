@@ -18,5 +18,10 @@
   }
   button:hover {
     background: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button:focus {
+    outline: none;
   }
 </style>

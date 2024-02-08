@@ -6,6 +6,7 @@
   import isUserUsingMobile from "./utils/CheckDevice";
   import Header from "./Header.svelte";
   import AddLights from "./utils/AddLights";
+  import ElasticDot from "./utils/ElasticDot.svelte";
 
   let camera, scene, renderer;
   let meshes = [];
@@ -17,6 +18,7 @@
   let bgmeshes = [];
   const pieces = ["king", "queen", "bishop", "knight", "rook", "pawn"];
   let position = [0, 2.1, 0];
+  let loading = true;
 
   let rotationSpeed = 0.01;
   let isDragging = false;
@@ -28,6 +30,8 @@
   const bgcount = isMobile ? 1 : 3;
 
   if (isMobile) position = [0, 2.3, 0];
+
+  const manager = new THREE.LoadingManager();
 
   function addPieceToWorldFromModel(model, isEye, first) {
     if (meshes.length < 5 && meshnames.find((mesh) => mesh === model.name) === undefined) {
@@ -50,29 +54,24 @@
       if (scene.children.length < 12) {
         meshes.push(mesh);
         meshnames.push(model.name);
-        scene.add(mesh);
       }
     }
   }
 
   const loadBgModel = (piece) => {
     for (let i = 0; i < bgcount; i++) {
-      const loader = new GLTFLoader();
+      const loader = new GLTFLoader(manager);
       loader.load(`assets/bg_${piece}.glb`, function (gltf) {
         let child = gltf.scene.children[0];
         child.material = new THREE.MeshStandardMaterial({
           color: 0x141414,
-          // transparent: true,
         });
         isMobile ? child.position.set(-0.6, 2.2, -2) : child.position.set(-5.5 + i * 4.1, 1.8, -2);
         isMobile ? child.scale.set(0.7, 0.7, 0.7) : child.scale.set(1, 1, 1);
         child.rotation.set(1.7, 0, 0);
         child.name = "bg" + i;
         if (bgmeshes.length < bgcount) {
-          scene.add(child);
           bgmeshes.push(child);
-          //child.material.opacity = 0.4;
-          //gsap.to(child.material, { duration: 0.3, opacity: 1, ease: Power1.easeInOut });
         }
       });
     }
@@ -82,7 +81,6 @@
     let rotationBefore;
 
     if (meshes.length > 1) {
-      //let piecePart = scene.getObjectByName(meshes[0].name);
       const pieceParts = meshes.slice(0, 4).map((mesh) => scene.getObjectByName(mesh.name));
       const isBishop = piece === "bishop" && pieceParts[0].name === "Cube016";
       const isQueen = piece === "queen" && pieceParts[0].name === "Cylinder003";
@@ -135,7 +133,7 @@
 
     const loadNewModel = (piece) => {
       currentPiece = piece;
-      const loader = new GLTFLoader();
+      const loader = new GLTFLoader(manager);
       loader.load(`assets/${piece}.glb`, function (gltf) {
         gltf.scene.traverse(function (child) {
           if (child.name == `${piece}_eye`) {
@@ -208,6 +206,12 @@
     camera.rotation.set(0, 0, 0);
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0xe7e7e7);
+
+    manager.onLoad = function () {
+      loading = false;
+      scene.add(...meshes);
+      scene.add(...bgmeshes);
+    };
 
     material = new THREE.MeshPhysicalMaterial({
       color: 0x8bf7ff,
@@ -319,7 +323,7 @@
       rotationSpeed *= 1 - 0.02;
       meshes.forEach((mesh) => {
         mesh.rotation.x += decelerationDirection.y * rotationSpeed * (isMobile ? 0.02 : 0.05);
-        mesh.rotation.y += decelerationDirection.x * rotationSpeed * 0.05;
+        mesh.rotation.y += decelerationDirection.x * rotationSpeed * (isMobile ? 0.1 : 0.05);
       });
 
       // If rotation speed is very small, stop decelerating
@@ -336,23 +340,42 @@
 
 <main>
   <Header {isMobile} />
-  <canvas id="bg"></canvas>
-  <div class="options">
-    <div class="pieceoptions">
-      {#each pieces as piece}
-        <Buttons on:click={() => loadGltf(piece)} {currentPiece} ownPiece={piece} {isMobile} />
-      {/each}
+  {#if loading}
+    <div class="loading-screen">
+      <ElasticDot />
     </div>
-    <MaterialChanger bind:meshes bind:currentMaterial {whitematerial} {material} />
-  </div>
+  {:else}
+    <canvas id="bg"></canvas>
+    <div class="options">
+      <div class="pieceoptions">
+        {#each pieces as piece}
+          <Buttons on:click={() => loadGltf(piece)} {currentPiece} ownPiece={piece} {isMobile} />
+        {/each}
+      </div>
+      <MaterialChanger bind:meshes bind:currentMaterial {whitematerial} {material} />
+    </div>
+  {/if}
 </main>
 
 <style>
+  .loading-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #e7e7e7;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+    z-index: 100;
+  }
   .options {
     position: absolute;
     bottom: 0;
     left: 0;
-    z-index: 50;
+    z-index: 40;
     width: 100vw;
     height: 130px;
     display: flex;
@@ -394,7 +417,7 @@
     }
     .options {
       height: auto;
-      margin-bottom: 20px;
+      margin-bottom: 40px;
     }
   }
 </style>

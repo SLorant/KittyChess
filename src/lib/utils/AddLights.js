@@ -4,9 +4,18 @@ const AddLights = (isHome, isContact, isMobile) => {
   const lights = [];
   if (isMobile) {
     const pointLight3 = new THREE.DirectionalLight(0xffffff);
-    pointLight3.position.set(0, 2, 5);
-    pointLight3.intensity = isHome ? 6 : 5;
 
+    pointLight3.position.set(0, 2, 5);
+    isContact ? pointLight3.position.set(0, 2, 10) : pointLight3.position.set(0, 2, 5);
+    pointLight3.intensity = isHome ? 6 : 5;
+    pointLight3.intensity = isHome ? 6 : isContact ? 3 : 4;
+
+    if (!isHome) {
+      const pointLight2 = new THREE.DirectionalLight(isContact ? 0xacf5ff : 0x85f0ff);
+      pointLight2.position.set(-5, 3, 5);
+      pointLight2.intensity = 3;
+      lights.push(pointLight2);
+    }
     lights.push(pointLight3);
   } else {
     const pointLight = new THREE.DirectionalLight(0xffffff);

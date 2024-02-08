@@ -14,5 +14,4 @@
 </Router>
 
 <style>
-  /* Add your global styles here if needed */
 </style>

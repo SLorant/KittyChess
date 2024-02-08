@@ -5,13 +5,9 @@
   import Header from "./Header.svelte";
   import isUserUsingMobile from "./utils/CheckDevice";
   import AddLights from "./utils/AddLights";
-  import SvelteSeo from "svelte-seo";
-  import App from "../App.svelte";
   import ElasticDot from "./utils/ElasticDot.svelte";
 
   let loading = true;
-
-  let loadedModels = 0;
   let camera, scene, renderer, controls;
   let meshes = [];
   const meshnames = [];
@@ -57,19 +53,9 @@
     });
 
     const manager = new THREE.LoadingManager();
-    manager.onStart = function (url, itemsLoaded, itemsTotal) {
-      console.log("Started loading file: " + url + ".\nLoaded " + itemsLoaded + " of " + itemsTotal + " files.");
-    };
     manager.onLoad = function () {
-      console.log("Loading complete!");
       loading = false;
       scene.add(...meshes);
-    };
-    manager.onProgress = function (url, itemsLoaded, itemsTotal) {
-      console.log("Loading file: " + url + ".\nLoaded " + itemsLoaded + " of " + itemsTotal + " files.");
-    };
-    manager.onError = function (url) {
-      console.log("There was an error loading " + url);
     };
 
     function addPieceToWorldFromModel(model, index, isEye) {
@@ -89,7 +75,6 @@
         mesh.rotation.set(0, 0, 0);
         meshes.push(mesh);
         meshnames.push(model.name);
-        //scene.add(mesh);
       }
     }
 
@@ -296,16 +281,16 @@
           meshnames[2] = "rook_1";
         }
         addToGroup(pawngroup, 0, false);
+        addToGroup(knightgroup, 2, false);
 
         move(pawngroup, mousedir, 2, true);
+        move(knightgroup, rookdir, 1.5);
 
         meshes[0].rotation.z -= rotationspeed;
         meshes[1].rotation.z -= rotationspeed;
 
-        addToGroup(knightgroup, 2, false);
-        move(knightgroup, rookdir, 1.5);
-        meshes[2].rotation.y += 0.002;
-        meshes[3].rotation.y += 0.002;
+        meshes[2].rotation.z += 0.002;
+        meshes[3].rotation.z += 0.002;
       }
     }
     controls.update();
@@ -315,35 +300,6 @@
   animate();
 </script>
 
-<SvelteSeo
-  title="KITTY CHESS"
-  description="Showcase website of the coolest chess set you've ever seen."
-  canonical="https://kittychess.netlify.app/"
-  keywords="cat, chess, chess pieces, 3d, art, design"
-  openGraph={{
-    title: "KITTY CHESS",
-    description: "Showcase website of the coolest chess set you've ever seen.",
-    image: "https://kittychess.netlify.app/cover.webp",
-    url: "https://kittychess.netlify.app/",
-    type: "website",
-    images: [
-      {
-        url: "https://kittychess.netlify.app/cover.webp",
-        width: 1000,
-        height: 750,
-        alt: "Landing",
-      },
-    ],
-    site_name: "KITTY CHESS",
-  }}
-  twitter={{
-    card: "summary_large_image",
-    site: "@kittychess",
-    title: "KITTY CHESS",
-    description: "Showcase website of the coolest chess set you've ever seen.",
-    image: "https://kittychess.netlify.app/cover.webp",
-  }}
-/>
 <main>
   <Header {isMobile} />
 
