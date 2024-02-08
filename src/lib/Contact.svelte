@@ -49,7 +49,7 @@
     //adds the contact background model
     if (!isMobile) {
       const bgloader = new GLTFLoader();
-      bgloader.load(`src/assets/contact.glb`, function (gltf) {
+      bgloader.load(`assets/contact.glb`, function (gltf) {
         gltf.scene.traverse(function (child) {
           let mesh = new THREE.Mesh(
             child.geometry,
@@ -68,7 +68,7 @@
 
     /*     if (isMobile) {
       const bgloader2 = new GLTFLoader();
-      bgloader2.load(`src/assets/contact.glb`, function (gltf) {
+      bgloader2.load(`assets/contact.glb`, function (gltf) {
         gltf.scene.traverse(function (child) {
           let mesh = new THREE.Mesh(
             child.geometry,
@@ -86,7 +86,7 @@
     const model = isMobile ? "rook" : "bishop";
     //loads the piece model
     const loader = new GLTFLoader();
-    loader.load(`src/assets/${model}.glb`, function (gltf) {
+    loader.load(`assets/${model}.glb`, function (gltf) {
       gltf.scene.traverse(function (child) {
         if (child.name == `${model}_eye`) {
           addPieceToWorldFromModel(child);

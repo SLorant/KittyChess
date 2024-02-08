@@ -74,7 +74,7 @@
 
     // Background mesh loader
     const bgLoader = new GLTFLoader();
-    const bg = isMobile ? "src/assets/bg_phone.glb" : "src/assets/background.glb";
+    const bg = isMobile ? "assets/bg_phone.glb" : "assets/background.glb";
     bgLoader.load(`${bg}`, function (gltf) {
       gltf.scene.traverse(function (child) {
         let mesh = new THREE.Mesh(
@@ -114,7 +114,7 @@
 
       const loader = new GLTFLoader();
       // loads the pieces one by one, meshes are a bit confusing so manual intervention is needed
-      loader.load(`src/assets/${piece}.glb`, function (gltf) {
+      loader.load(`assets/${piece}.glb`, function (gltf) {
         gltf.scene.traverse(function (child) {
           if (child.name == `${piece}_eye` || child.name == "pawn") {
             addPieceToWorldFromModel(child, i, true);
