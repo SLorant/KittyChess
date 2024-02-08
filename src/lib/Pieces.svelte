@@ -222,7 +222,7 @@
 
     loadGltf(pieces[0], true);
 
-    const lights = AddLights(false, false);
+    const lights = AddLights(false, false, isMobile);
     scene.add(...lights);
 
     renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -319,7 +319,7 @@
       rotationSpeed *= 1 - 0.02;
       meshes.forEach((mesh) => {
         mesh.rotation.x += decelerationDirection.y * rotationSpeed * (isMobile ? 0.02 : 0.05);
-        mesh.rotation.y += decelerationDirection.x * rotationSpeed * (isMobile ? 0.02 : 0.05);
+        mesh.rotation.y += decelerationDirection.x * rotationSpeed * 0.05;
       });
 
       // If rotation speed is very small, stop decelerating

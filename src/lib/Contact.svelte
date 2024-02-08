@@ -196,7 +196,7 @@
     <span>
       <p>Developed by&nbsp;</p>
       <p class="bold">Lóránt Sutus</p>
-      <a href="https://github.com/SLorant" target="_blank"><img src="github.png" alt="github" /></a></span
+      <a href="https://github.com/SLorant" target="_blank"><img src="github.svg" alt="github" /></a></span
     >
   </div>
 

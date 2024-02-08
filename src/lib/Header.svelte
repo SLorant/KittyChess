@@ -69,7 +69,6 @@
     font-size: 18px;
   }
   .link {
-    border-bottom: 2px solid rgba(231, 231, 231, 0.2);
     padding-bottom: 11px;
     width: 100vw;
   }
@@ -83,8 +82,11 @@
     margin-top: 40px;
   }
   @media screen and (max-width: 600px) {
+    .header {
+      top: 0px;
+    }
     .header2 {
-      height: 168px;
+      height: 158px;
       backdrop-filter: blur(20px);
       box-shadow: 0px 15px 15px rgba(20, 20, 20, 0.3);
       background: rgba(231, 231, 231, 0.3);

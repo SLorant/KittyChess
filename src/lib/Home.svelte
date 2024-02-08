@@ -6,6 +6,8 @@
   import isUserUsingMobile from "./utils/CheckDevice";
   import AddLights from "./utils/AddLights";
   import SvelteSeo from "svelte-seo";
+  import App from "../App.svelte";
+  import ElasticDot from "./utils/ElasticDot.svelte";
 
   let loading = true;
 
@@ -54,6 +56,22 @@
       clearcoatRoughness: 1,
     });
 
+    const manager = new THREE.LoadingManager();
+    manager.onStart = function (url, itemsLoaded, itemsTotal) {
+      console.log("Started loading file: " + url + ".\nLoaded " + itemsLoaded + " of " + itemsTotal + " files.");
+    };
+    manager.onLoad = function () {
+      console.log("Loading complete!");
+      loading = false;
+      scene.add(...meshes);
+    };
+    manager.onProgress = function (url, itemsLoaded, itemsTotal) {
+      console.log("Loading file: " + url + ".\nLoaded " + itemsLoaded + " of " + itemsTotal + " files.");
+    };
+    manager.onError = function (url) {
+      console.log("There was an error loading " + url);
+    };
+
     function addPieceToWorldFromModel(model, index, isEye) {
       if (meshnames.find((mesh) => mesh === model.name) === undefined) {
         if (model.name === "pawn_eye") isEye = true;
@@ -71,8 +89,7 @@
         mesh.rotation.set(0, 0, 0);
         meshes.push(mesh);
         meshnames.push(model.name);
-        scene.add(mesh);
-        loadedModels++;
+        //scene.add(mesh);
       }
     }
 
@@ -110,13 +127,13 @@
         [0, 0.8, 3],
         [0, -1, 0],
       ];
-      materials = [true, true];
+      materials = [true, false];
     }
 
     for (let i = 0; i < pieces.length; i++) {
       let piece = pieces[i];
 
-      const loader = new GLTFLoader();
+      const loader = new GLTFLoader(manager);
       // loads the pieces one by one, meshes are a bit confusing so manual intervention is needed
       loader.load(`assets/${piece}.glb`, function (gltf) {
         gltf.scene.traverse(function (child) {
@@ -139,13 +156,9 @@
           }
         });
       });
-
-      if (loadedModels === pieces.length) {
-        loading = false;
-      }
     }
 
-    const lights = AddLights(true, false);
+    const lights = AddLights(true, false, isMobile);
     scene.add(...lights);
 
     renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -283,14 +296,14 @@
           meshnames[2] = "rook_1";
         }
         addToGroup(pawngroup, 0, false);
-        addToGroup(knightgroup, 2, false);
 
         move(pawngroup, mousedir, 2, true);
-        move(knightgroup, rookdir, 1.5);
 
         meshes[0].rotation.z -= rotationspeed;
         meshes[1].rotation.z -= rotationspeed;
 
+        addToGroup(knightgroup, 2, false);
+        move(knightgroup, rookdir, 1.5);
         meshes[2].rotation.y += 0.002;
         meshes[3].rotation.y += 0.002;
       }
@@ -302,18 +315,44 @@
   animate();
 </script>
 
-<SvelteSeo title="KITTY CHESS" description="Simple description about a page" />
+<SvelteSeo
+  title="KITTY CHESS"
+  description="Showcase website of the coolest chess set you've ever seen."
+  canonical="https://kittychess.netlify.app/"
+  keywords="cat, chess, chess pieces, 3d, art, design"
+  openGraph={{
+    title: "KITTY CHESS",
+    description: "Showcase website of the coolest chess set you've ever seen.",
+    image: "https://kittychess.netlify.app/cover.webp",
+    url: "https://kittychess.netlify.app/",
+    type: "website",
+    images: [
+      {
+        url: "https://kittychess.netlify.app/cover.webp",
+        width: 1000,
+        height: 750,
+        alt: "Landing",
+      },
+    ],
+    site_name: "KITTY CHESS",
+  }}
+  twitter={{
+    card: "summary_large_image",
+    site: "@kittychess",
+    title: "KITTY CHESS",
+    description: "Showcase website of the coolest chess set you've ever seen.",
+    image: "https://kittychess.netlify.app/cover.webp",
+  }}
+/>
 <main>
   <Header {isMobile} />
 
   {#if loading}
     <div class="loading-screen">
-      <p>Loading...</p>
+      <ElasticDot />
     </div>
   {:else}
-    <main>
-      <canvas id="bg"></canvas>
-    </main>
+    <canvas id="bg"></canvas>
   {/if}
 </main>
 
@@ -324,11 +363,12 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: #e7e7e7;
     display: flex;
     justify-content: center;
     align-items: center;
     font-size: 24px;
+    z-index: 100;
   }
   main {
     position: absolute;
