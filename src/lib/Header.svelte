@@ -55,12 +55,12 @@
 <style>
   .header {
     position: absolute;
-    top: 0;
+    top: 10px;
     left: 0;
     z-index: 50;
     width: 100vw;
     height: 70px;
-    gap: 200px;
+    gap: 15vw;
     display: flex;
     justify-content: center;
     place-items: center;

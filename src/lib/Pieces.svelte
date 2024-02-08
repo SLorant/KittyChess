@@ -384,7 +384,7 @@
     left: 0;
   }
 
-  @media screen and (max-width: 600px) {
+  @media screen and (max-width: 768px) {
     .pieceoptions {
       display: grid;
       grid-template-columns: auto auto auto;

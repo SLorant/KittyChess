@@ -5,6 +5,7 @@
   import Header from "./Header.svelte";
   import isUserUsingMobile from "./utils/CheckDevice";
   import AddLights from "./utils/AddLights";
+  import SvelteSeo from "svelte-seo";
 
   let camera, scene, renderer, controls;
   let meshes = [];
@@ -71,6 +72,7 @@
       }
     }
 
+    // Background mesh loader
     const bgLoader = new GLTFLoader();
     const bg = isMobile ? "src/assets/bg_phone.glb" : "src/assets/background.glb";
     bgLoader.load(`${bg}`, function (gltf) {
@@ -111,6 +113,7 @@
       let piece = pieces[i];
 
       const loader = new GLTFLoader();
+      // loads the pieces one by one, meshes are a bit confusing so manual intervention is needed
       loader.load(`src/assets/${piece}.glb`, function (gltf) {
         gltf.scene.traverse(function (child) {
           if (child.name == `${piece}_eye` || child.name == "pawn") {
@@ -184,6 +187,8 @@
   const rookgroup = new THREE.Group();
   const kinggroup = new THREE.Group();
 
+  // adds the pieces to groups, because the eyes and body are different pieces
+  // and when moving, the whole group needs to move
   function addToGroup(group, index, rook) {
     if (group.children.length < 1) {
       group.add(meshes[index]);
@@ -278,8 +283,8 @@
         meshes[0].rotation.z -= rotationspeed;
         meshes[1].rotation.z -= rotationspeed;
 
-        meshes[2].rotation.z += 0.002;
-        meshes[3].rotation.z += 0.002;
+        meshes[2].rotation.y += 0.002;
+        meshes[3].rotation.y += 0.002;
       }
     }
     controls.update();
@@ -289,6 +294,7 @@
   animate();
 </script>
 
+<SvelteSeo title="KITTY CHESS" description="Simple description about a page" />
 <main>
   <Header {isMobile} />
   <canvas id="bg"></canvas>

@@ -7,12 +7,16 @@
   import Header from "./Header.svelte";
   import AddLights from "./utils/AddLights";
   let camera, scene, renderer, controls;
+  const isMobile = isUserUsingMobile();
+
   let meshes = [];
   let mouseX = 0;
   let mouseY = 0;
   const mouseSpeed = 0.005;
   const dampingFactor = 0.1;
   const meshnames = [];
+  let position = [0.7, -0.9, 11];
+  if (isMobile) position = [0, -0.5, 10];
 
   let targetX = 0;
   let targetY = 0;
@@ -22,8 +26,6 @@
   render();
   let bgmesh;
 
-  const isMobile = isUserUsingMobile();
-
   function init() {
     camera = new THREE.PerspectiveCamera(15, window.innerWidth / window.innerHeight, 0.1, 100);
     camera.position.set(0, 0, 15.5);
@@ -32,22 +34,10 @@
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0xe7e7e7);
 
-    const material = new THREE.MeshPhysicalMaterial({
-      color: 0x79e0e8,
-      transmission: 1,
-      transparent: true,
-
-      thickness: 0.5,
-      roughness: 0.32,
-      envMapIntensity: 0,
-      clearcoat: 1,
-      clearcoatRoughness: 1,
-    });
-
     function addPieceToWorldFromModel(model) {
       if (meshnames.find((mesh) => mesh === model.name) === undefined) {
         const mesh = new THREE.Mesh(model.geometry, model.material);
-        mesh.position.set(...positions[0]);
+        mesh.position.set(...position);
         mesh.scale.set(3.75, 3.75, 3.75);
         mesh.rotation.set(0, 0, 0);
         meshnames.push(model.name);
@@ -55,39 +45,56 @@
         scene.add(mesh);
       }
     }
-    /*new THREE.MeshBasicMaterial({
-                color: 0x414141,
-              })*/
-    const loader2 = new GLTFLoader();
-    loader2.load(`src/assets/contact.glb`, function (gltf) {
-      gltf.scene.traverse(function (child) {
-        let mesh = new THREE.Mesh(
-          child.geometry,
-          new THREE.MeshStandardMaterial({
-            color: 0x141414,
-          })
-        );
-        mesh.position.set(-4, -0.7, 2);
-        mesh.scale.set(1, 1, 1);
-        mesh.rotation.set(0, 0, 0);
-        bgmesh = mesh;
-        scene.add(mesh);
+
+    //adds the contact background model
+    if (!isMobile) {
+      const bgloader = new GLTFLoader();
+      bgloader.load(`src/assets/contact.glb`, function (gltf) {
+        gltf.scene.traverse(function (child) {
+          let mesh = new THREE.Mesh(
+            child.geometry,
+            new THREE.MeshStandardMaterial({
+              color: 0x141414,
+            })
+          );
+          isMobile ? mesh.position.set(-2.7, -0.3, 0) : mesh.position.set(-2.6, -0.2, 3);
+          isMobile ? mesh.scale.set(0.7, 0.7, 0.7) : mesh.scale.set(1, 1, 1);
+          mesh.rotation.set(0, 0, 0);
+          bgmesh = mesh;
+          scene.add(mesh);
+        });
       });
-    });
+    }
 
-    const pieces = ["rook", "pawn", "knight", "king"];
-    const positions = [[0.8, -0.9, 11]];
-
+    /*     if (isMobile) {
+      const bgloader2 = new GLTFLoader();
+      bgloader2.load(`src/assets/contact.glb`, function (gltf) {
+        gltf.scene.traverse(function (child) {
+          let mesh = new THREE.Mesh(
+            child.geometry,
+            new THREE.MeshStandardMaterial({
+              color: 0x141414,
+            })
+          );
+          mesh.position.set(-0.9, 0.6, 0);
+          mesh.scale.set(0.7, 0.7, 0.7);
+          mesh.rotation.set(0, 0, 0);
+          scene.add(mesh);
+        });
+      });
+    } */
+    const model = isMobile ? "rook" : "bishop";
+    //loads the piece model
     const loader = new GLTFLoader();
-    loader.load(`src/assets/bishop.glb`, function (gltf) {
+    loader.load(`src/assets/${model}.glb`, function (gltf) {
       gltf.scene.traverse(function (child) {
-        if (child.name == `bishop_eye`) {
+        if (child.name == `${model}_eye`) {
           addPieceToWorldFromModel(child);
         } else {
-          let ogmodel = gltf.scene.children.find((mesh) => mesh.name === "bishop");
-          let model = ogmodel.children[0];
+          let ogmodel = gltf.scene.children.find((mesh) => mesh.name === `${model}`);
+          let model1 = ogmodel.children[0];
           let model2 = ogmodel.children[1];
-          addPieceToWorldFromModel(model);
+          addPieceToWorldFromModel(model1);
           addPieceToWorldFromModel(model2);
         }
       });
@@ -116,7 +123,7 @@
     controls.update();
 
     window.addEventListener("resize", onWindowResize);
-    document.addEventListener("mousemove", onDocumentMouseMove);
+    !isMobile && document.addEventListener("mousemove", onDocumentMouseMove);
   }
 
   function onWindowResize() {
@@ -132,30 +139,50 @@
   }
   function render() {
     camera.rotation.set(0, 0, 0);
+    //the piece follows the mouse
 
-    targetX = (mouseX / 5 - 200) * mouseSpeed;
-    targetY = (mouseY / 10 - 50) * mouseSpeed;
-    if (meshes.length > 0) {
-      meshes.forEach((mesh) => {
-        mesh.rotation.x += dampingFactor * (targetY - mesh.rotation.x);
-        if (mouseX > 180) {
-          mesh.rotation.y += dampingFactor * (targetX - mesh.rotation.y);
-        } else {
-          mesh.rotation.y += dampingFactor * (targetX - mesh.rotation.y);
-        }
-      });
-    }
     renderer.render(scene, camera);
   }
 
+  let back = false;
   function animate() {
     controls.update();
+    if (isMobile) {
+      if (meshes.length > 0) {
+        meshes.forEach((mesh) => {
+          if (mesh.rotation.y > 0.2) {
+            back = true;
+          } else if (mesh.rotation.y < -0.2) {
+            back = false;
+          }
+
+          if (back) {
+            mesh.rotation.y -= 0.002;
+          } else {
+            mesh.rotation.y += 0.002;
+          }
+        });
+      }
+    } else {
+      targetX = (mouseX / 5 - 200) * mouseSpeed;
+      targetY = (mouseY / 10 - 50) * mouseSpeed;
+      if (meshes.length > 0) {
+        meshes.forEach((mesh) => {
+          mesh.rotation.x += dampingFactor * (targetY - mesh.rotation.x);
+          if (mouseX > 180) {
+            mesh.rotation.y += dampingFactor * (targetX - mesh.rotation.y);
+          } else {
+            mesh.rotation.y += dampingFactor * (targetX - mesh.rotation.y);
+          }
+        });
+      }
+    }
+
     renderer.render(scene, camera);
     requestAnimationFrame(animate);
   }
 
   animate();
-  //2A3739
 </script>
 
 <main>
@@ -179,7 +206,7 @@
 <style>
   div {
     position: absolute;
-    bottom: 17%;
+    bottom: 30%;
     left: 30%;
     z-index: 50;
     font-family: "Fredoka", sans-serif;
@@ -200,10 +227,12 @@
     place-items: center;
     height: 30px;
   }
+
   img {
     margin-left: 10px;
     height: 30px;
     width: 30px;
+    margin-top: 4px;
   }
   main {
     position: absolute;
@@ -216,5 +245,14 @@
     position: absolute;
     top: 0;
     left: 0;
+  }
+  @media screen and (max-width: 768px) {
+    div {
+      bottom: 10%;
+      left: 12%;
+    }
+    span {
+      justify-content: center;
+    }
   }
 </style>
