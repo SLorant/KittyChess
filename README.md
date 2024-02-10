@@ -1,7 +1,7 @@
 # Kitty Chess
 
 This project is an experimental showcase website promoting a unique cat-theme chess set. It allows users to interact with the models by moving, spinning and modifying the colors of the chess pieces, creating a fun experience.
-The website is available at: https://kittychess.netlify.app/pieces
+The website is available at: https://kittychess.netlify.app
 
 ## Installation
 
@@ -44,4 +44,4 @@ This project is licensed under the MIT License.
 
 ## Acknowledgments
 
-This project was co-operation with Adrienn Kovács ([Behance](https://www.behance.net/adriennkovcs2)), who made these beautiful models, and designed the UI.
+This project was co-operation with Adrienn Kovács ([Behance](https://www.behance.net/adriennkovcs2)), who made these awesome models, and designed the UI.
