@@ -19,7 +19,7 @@
   const pieces = ["king", "queen", "bishop", "knight", "rook", "pawn"];
   let position = [0, 2.1, 0];
   let loading = true;
-
+  const clock = new THREE.Clock()
   let rotationSpeed = 0.01;
   let isDragging = false;
   let isDecelerating = false;
@@ -249,8 +249,8 @@
       if (isDragging) {
         rotationSpeed = 0.005; // Decelerate slightly while dragging
         meshes.forEach((mesh) => {
-          mesh.rotation.x += (isTouch ? deltaMove.y / 50 : deltaMove.y) * rotationSpeed;
-          mesh.rotation.y += (isTouch ? deltaMove.x / 50 : deltaMove.x) * rotationSpeed;
+          mesh.rotation.x += (isTouch ? deltaMove.y / 40 : deltaMove.y) * rotationSpeed;
+          mesh.rotation.y += (isTouch ? deltaMove.x / 35 : deltaMove.x) * rotationSpeed;
         });
       }
       previousPosition = {
@@ -310,6 +310,8 @@
   }
 
   function animate() {
+    const elapsedTime = clock.getElapsedTime()
+    const fixedElapsedTime = Math.min(elapsedTime, 0.016);
     if (bgmeshes.length > bgcount - 1) {
       for (let i = 0; i < bgmeshes.length; i++) {
         if (bgmeshes[i].position.x < (isMobile ? -3.4 : -7.3)) {
@@ -322,9 +324,9 @@
     if (!isDragging && isDecelerating) {
       rotationSpeed *= 1 - 0.02;
       meshes.forEach((mesh) => {
-        mesh.rotation.x += decelerationDirection.y * rotationSpeed * (isMobile ? 0.02 : 0.05);
-        mesh.rotation.y += decelerationDirection.x * rotationSpeed * (isMobile ? 0.1 : 0.05);
-      });
+        mesh.rotation.x += decelerationDirection.y * rotationSpeed * (isMobile ? 1 : 2) * fixedElapsedTime;
+        mesh.rotation.y += decelerationDirection.x * rotationSpeed * (isMobile ? 1 : 2) * fixedElapsedTime;
+      }); 
 
       // If rotation speed is very small, stop decelerating
       if (rotationSpeed < (isMobile ? 0.0001 : 0.000001)) {

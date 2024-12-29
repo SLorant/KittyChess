@@ -19,6 +19,7 @@
   const meshnames = [];
   let position = [0.7, -0.9, 11];
   if (isMobile) position = [0, -1, 6];
+  const clock = new THREE.Clock()
 
   let targetX = 0;
   let targetY = 0;
@@ -136,21 +137,12 @@
 
   let back = false;
   function animate() {
+    const elapsedTime = clock.getElapsedTime()
     controls.update();
     if (isMobile) {
       if (meshes.length > 0) {
         meshes.forEach((mesh) => {
-          if (mesh.rotation.y > 0.25) {
-            back = true;
-          } else if (mesh.rotation.y < -0.2) {
-            back = false;
-          }
-
-          if (back) {
-            mesh.rotation.y -= 0.005;
-          } else {
-            mesh.rotation.y += 0.005;
-          }
+          mesh.rotation.y = Math.sin(elapsedTime) * 0.8;
         });
       }
     } else {

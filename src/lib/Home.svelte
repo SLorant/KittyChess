@@ -15,7 +15,6 @@
   let mouseY = 0;
   let targetX = 0;
   let targetY = 0;
-  const rotationspeed = 0.005;
   const windowHalfX = window.innerWidth / 2;
   const windowHalfY = window.innerHeight / 2;
   let bgmesh;
@@ -187,6 +186,7 @@
   const knightdir = { x: 1, y: 1 };
   const rookdir = { x: 1, y: 1 };
   const kingdir = { x: 1, y: 1 };
+  const clock = new THREE.Clock()
 
   const pawngroup = new THREE.Group();
   const knightgroup = new THREE.Group();
@@ -206,27 +206,30 @@
     }
   }
 
-  function move(group, dir, speed, left) {
-    if (left) group.position.x -= 0.00025 * dir.x * speed;
-    else group.position.x += 0.00025 * dir.x * speed;
+  function move(group, dir, speed, elapsedTime, left) {
+  const fixedElapsedTime = Math.min(elapsedTime, 0.016); // Normalize to 60 FPS (1/60 ≈ 0.016)
+  const deltaX = 0.1 * dir.x * speed * fixedElapsedTime;
+  const deltaY = 0.1 * dir.y * speed * fixedElapsedTime * -1;
 
-    group.position.y -= 0.001 * dir.y * speed;
-    if (isMobile) {
-      if (group.position.x > 0.3 || group.position.x < -0.3) {
-        dir.x *= -1;
-      }
-      if (group.position.y > 0.5 || group.position.y < -0.3) {
-        dir.y *= -1;
-      }
-    } else {
-      if (group.position.x > 1 || group.position.x < -1.2) {
-        dir.x *= -1;
-      }
-      if (group.position.y > 0.5 || group.position.y < -0.3) {
-        dir.y *= -1;
-      }
+  group.position.x += deltaX;
+  group.position.y += deltaY;
+
+  if (isMobile) {
+    if (group.position.x > 0.3 || group.position.x < -0.3) {
+      dir.x *= -1;
+    }
+    if (group.position.y > 0.4 || group.position.y < -0.3) {
+      dir.y *= -1;
+    }
+  } else {
+    if (group.position.x > 1 || group.position.x < -0.8) {
+      dir.x *= -1;
+    }
+    if (group.position.y > 0.4 || group.position.y < -0.3) {
+      dir.y *= -1;
     }
   }
+}
   function updateRotation(axis) {
     if (bgmesh.rotation[axis] < 0.2 && bgmesh.rotation[axis] > -0.2) {
       bgmesh.rotation[axis] += 0.002 * (targetX - bgmesh.rotation[axis]) * (1 - bgmesh.rotation[axis]);
@@ -236,6 +239,7 @@
   }
 
   function animate() {
+    const elapsedTime = clock.getElapsedTime()
     if (meshes.length > 8) {
       if (meshnames[2] !== "rook_1") {
         meshes = meshes.sort(compareMeshes);
@@ -252,28 +256,26 @@
       addToGroup(rookgroup, 5, false);
       addToGroup(kinggroup, 7, false);
 
-      move(pawngroup, mousedir, 2, true);
-      move(knightgroup, rookdir, 1.5);
-      move(rookgroup, knightdir, 0.5);
-      move(kinggroup, kingdir, 1);
+      move(pawngroup, mousedir, 2,  elapsedTime, true);
+      move(knightgroup, rookdir, 1.5, elapsedTime);
+      move(rookgroup, knightdir, 0.5, elapsedTime);
+      move(kinggroup, kingdir, 1, elapsedTime);
 
-      meshes[0].rotation.x += rotationspeed;
-      meshes[1].rotation.x += rotationspeed;
-      meshes[0].rotation.y += rotationspeed;
-      meshes[1].rotation.y += rotationspeed;
+      meshes[0].rotation.x = elapsedTime*0.5;
+      meshes[1].rotation.x = elapsedTime*0.5;
+      meshes[0].rotation.y = elapsedTime*0.5;
+      meshes[1].rotation.y = elapsedTime*0.5;
+      meshes[2].rotation.z = elapsedTime*0.5;
+      meshes[3].rotation.z = elapsedTime*0.5;
+      meshes[4].rotation.z = elapsedTime*0.5;
+      meshes[5].rotation.y = elapsedTime*0.5;
+      meshes[6].rotation.y = elapsedTime*0.5;
 
-      meshes[2].rotation.z += rotationspeed;
-      meshes[3].rotation.z += rotationspeed;
-      meshes[4].rotation.z += rotationspeed;
+      meshes[6].rotation.z = elapsedTime*0.25*-1;
+      meshes[5].rotation.z = elapsedTime*0.25*-1;
 
-      meshes[5].rotation.y += rotationspeed;
-      meshes[6].rotation.y += rotationspeed;
-
-      meshes[5].rotation.z -= 0.003;
-      meshes[6].rotation.z -= 0.003;
-
-      meshes[7].rotation.z -= rotationspeed;
-      meshes[8].rotation.z -= rotationspeed;
+      meshes[7].rotation.z = elapsedTime*0.5*-1;
+      meshes[8].rotation.z = elapsedTime*0.5*-1;
     } else if (isMobile) {
       if (meshes.length > 3) {
         if (meshnames[2] !== "rook_1") {
@@ -283,14 +285,14 @@
         addToGroup(pawngroup, 0, false);
         addToGroup(knightgroup, 2, false);
 
-        move(pawngroup, mousedir, 2, true);
-        move(knightgroup, rookdir, 1.5);
+        move(pawngroup, mousedir, 1.5, elapsedTime, true);
+        move(knightgroup, rookdir, 1.25, elapsedTime);
 
-        meshes[0].rotation.z -= rotationspeed;
-        meshes[1].rotation.z -= rotationspeed;
+        meshes[0].rotation.z = elapsedTime*0.4*-1;
+        meshes[1].rotation.z = elapsedTime*0.4*-1;
 
-        meshes[2].rotation.z += 0.002;
-        meshes[3].rotation.z += 0.002;
+        meshes[2].rotation.z = elapsedTime*0.3;
+        meshes[3].rotation.z = elapsedTime*0.3;
       }
     }
     controls.update();
