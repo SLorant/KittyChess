@@ -250,7 +250,7 @@
         rotationSpeed = 0.005; // Decelerate slightly while dragging
         meshes.forEach((mesh) => {
           mesh.rotation.x += (isTouch ? deltaMove.y / 40 : deltaMove.y) * rotationSpeed;
-          mesh.rotation.y += (isTouch ? deltaMove.x / 10 : deltaMove.x) * rotationSpeed;
+          mesh.rotation.y += (isTouch ? deltaMove.x / 40 : deltaMove.x) * rotationSpeed;
         });
       }
       previousPosition = {
@@ -325,7 +325,7 @@
       rotationSpeed *= 1 - 0.02;
       meshes.forEach((mesh) => {
         mesh.rotation.x += decelerationDirection.y * rotationSpeed * (isMobile ? 1 : 2) * fixedElapsedTime;
-        mesh.rotation.y += decelerationDirection.x * rotationSpeed * (isMobile ? 1 : 2) * fixedElapsedTime;
+        mesh.rotation.y += decelerationDirection.x * rotationSpeed * (isMobile ? 3 : 2) * fixedElapsedTime;
       }); 
 
       // If rotation speed is very small, stop decelerating
